@@ -3,7 +3,7 @@
 #include "ofxBody.h"
 #include <math.h>
 
-class Boid {
+class Particle {
 public:
     
     ofVec3f pos, vel, acc, ali, coh, sep, origin, bias;
@@ -57,11 +57,11 @@ public:
     
     
     
-    Boid() {
+    Particle() {
         
     }
     
-    Boid(int ID_, Boundary outer, ofVec3f centre_, int type_) {
+    Particle(int ID_, Boundary outer, ofVec3f centre_, int type_) {
         origin.set(centre_);
         ID = ID_;
         type = type_;

@@ -10,7 +10,6 @@ public:
     ofVec3f front, back, left, right, top, bottom;
     float length = 0;
     float halfLength;
-//    float front, back, left, right, top, bottom;
 
     Boundary() {
 
@@ -27,8 +26,6 @@ public:
     }
     
     void draw() {
-//        ofPushMatrix();
-//        ofTranslate(offset);
         ofSetLineWidth(1);
         ofSetColor(255);
         
@@ -63,10 +60,6 @@ public:
         ofSetColor(0,255,0);
         ofSphere(d,10);
         
-
-
-        
-//        ofPopMatrix();
     }
     
     void reset() {
@@ -89,24 +82,7 @@ public:
         left.set(d);
         right.set(b);
         front.set(a);
-        back.set(g);
-        
-//        top = -length;
-//        bottom = length;
-//        left = -length;
-//        right = length;
-//        front = length;
-//        back = -length;
-//        
-//        a += offset;
-//        b += offset;
-//        c += offset;
-//        d += offset;
-//        e += offset;
-//        f += offset;
-//        g += offset;
-//        h += offset;
-        
+        back.set(g);        
     }
     
 };

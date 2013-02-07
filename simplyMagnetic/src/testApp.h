@@ -2,11 +2,9 @@
 
 #include "ofMain.h"
 #include "ParticleSystem.h"
-#include "Boundary.h"
 #include "ofxSimpleGuiToo.h"
 #include "ofCamera.h"
-#include "ofxBody.h"
-#include <time.h> 
+#include <time.h>
 
 
 #define ATTRACT 0

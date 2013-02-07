@@ -4,14 +4,14 @@
 #include <vector>
 
 
-class ofxBody{
+class Body{
 public:
     
     ofVec3f pos;
     float mass, radius;
     int charge;
     
-    ofxBody(ofVec3f loc_, float mass_, int charge_) {
+    Body(ofVec3f loc_, float mass_, int charge_) {
         pos.set(loc_);
         mass = mass_;
         charge = charge_;

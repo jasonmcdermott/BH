@@ -1,7 +1,7 @@
 #pragma once
 #include "Boid.h"
+#include "Body.h"
 #include "Boundary.h"
-#include "ofxBody.h"
 
 
 class ParticleSystem {
