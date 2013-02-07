@@ -1,19 +1,19 @@
 #pragma once
-#include "Boundary.h"
+#include "ofxBoundary.h"
 #include "ofxBody.h"
 #include <math.h>
 
-class Particle {
+class ofxParticle {
 public:
     
     ofVec3f pos, vel, acc, ali, coh, sep, origin, bias;
-    float personalSpace, boidPerception, predPerception;
+    float personalSpace, pPerception, predPerception;
     bool avoidWalls = true;
     ofVec3f other, dist;
     float c;
-    float boidSpeed = 3;
+    float pSpeed = 3;
     float predSpeed = 6;
-    float boidForce = .5;
+    float pForce = .5;
     float predForce = 0.9;
     float evadeForce = 1;
     float h;
@@ -48,27 +48,27 @@ public:
     
     float M_PI_Divided_By_180;
 
-//    GLfloat sphereTexCoord2f [2592][2];
+    //      GLfloat sphereTexCoord2f [2592][2];
     
-    //     http://forums.inside3d.com/viewtopic.php?f=10&t=4835
-    // Based on http://www.swiftless.com/tutorials/opengl/sphere.html
-    // Overhauled and streamlined.
-    
-    
+    //      http://forums.inside3d.com/viewtopic.php?f=10&t=4835
+    //      Based on http://www.swiftless.com/tutorials/opengl/sphere.html
+    //      Overhauled and streamlined.
     
     
-    Particle() {
+    
+    
+    ofxParticle() {
         
     }
     
-    Particle(int ID_, Boundary outer, ofVec3f centre_, int type_) {
+    ofxParticle(int ID_, ofxBoundary outer, ofVec3f centre_, int type_) {
         origin.set(centre_);
         ID = ID_;
         type = type_;
         initBoid(outer);
     }
 
-    void initBoid(Boundary outer) {
+    void initBoid(ofxBoundary outer) {
 //        origin.set(origin.x + ofRandom(-outer.halfLength,outer.halfLength),origin.y + ofRandom(-outer.halfLength,outer.halfLength),origin.z+ ofRandom(-outer.halfLength,outer.halfLength));
         
         origin.set(origin.x + ofRandom(-10,10),origin.y + ofRandom(-10,10) ,origin.z + ofRandom(-10,10));
@@ -93,7 +93,7 @@ public:
         if (type == 0) {
             alignF = 1;
             interactWithBodies = true;
-            boidPerception = 50;
+            pPerception = 50;
             sc = 3;
         } else {
             alignF = 0;
@@ -105,7 +105,7 @@ public:
         createSphere();
     }
     
-    void run(vector <Boid> boids, Boundary outer, vector <ofxBody> bodies) {
+    void run(vector <ofxParticle> particles, ofxBoundary outer, vector <ofxBody> bodies) {
         if (reset == true) {
             initBoid(outer);
         }
@@ -121,7 +121,7 @@ public:
                 }
             }
             if (flock == true) {
-                flocking(boids);
+                flocking(particles);
             }
 
             moveTowardCentre();
@@ -172,10 +172,10 @@ public:
         }
     }
 
-    void flocking(vector <Boid> boids) {
-        ali = alignment(boids);
-        sep = separation(boids);
-        coh = cohesion(boids);
+    void flocking(vector <ofxParticle> particles) {
+        ali = alignment(particles);
+        sep = separation(particles);
+        coh = cohesion(particles);
         
         ali *= alignF;
         sep *= separationF;
@@ -187,22 +187,22 @@ public:
         
         if (interactWithPredators) {
             if (type == 0) {
-                fleePredators(boids);
+                fleePredators(particles);
             }
             if (type == 1) {
-                trailPrey(boids);
+                trailPrey(particles);
             }
-//            gobble(boids);
+//            gobble(particles);
         }
     }
     
-    void choosePrey(vector <Boid> boids) {
+    void choosePrey(vector <ofxParticle> particles) {
         if (randomPrey == false) {
             float closest = 500;
-            for (int i=0;i<boids.size();i++) {
-                if (boids[i].isDead == false && boids[i].type == 0) {
+            for (int i=0;i<particles.size();i++) {
+                if (particles[i].isDead == false && particles[i].type == 0) {
                     ofVec3f distance;
-                    distance = boids[i].pos - pos;
+                    distance = particles[i].pos - pos;
                     float dist = distance.length();
                     if (dist < closest) {
                         prey = i;
@@ -210,56 +210,56 @@ public:
                 }
             }
         } else {
-            for (int i=0;i<boids.size();i++) {
-                int rand = int(ofRandom(0,boids.size()));
-                if (boids[i].isDead == false && boids[i].type == 0) {
+            for (int i=0;i<particles.size();i++) {
+                int rand = int(ofRandom(0,particles.size()));
+                if (particles[i].isDead == false && particles[i].type == 0) {
                     prey = i;
                 } else {
-                    choosePrey(boids);
+                    choosePrey(particles);
                 }
             }
         }
     }
 
-    void trailPrey(vector <Boid> boids) {
+    void trailPrey(vector <ofxParticle> particles) {
         trailCount++;
         if (trailCount > 200) {
             updatePrey = true;
-            choosePrey(boids);
+            choosePrey(particles);
             trailCount = 0;
         }
-        for (int i=0;i<boids.size();i++) {
-            if (boids[prey].type == 0) {
+        for (int i=0;i<particles.size();i++) {
+            if (particles[prey].type == 0) {
                 ofVec3f att;
                 ofVec3f force;
-                att.set(boids[prey].pos);
+                att.set(particles[prey].pos);
                 force = att - pos;
                 float dist = force.length();
-                float inverseSquare = (mass * boids[prey].mass) / (dist * dist);
-                float minDist = (sc + boids[prey].mass);
+                float inverseSquare = (mass * particles[prey].mass) / (dist * dist);
+                float minDist = (sc + particles[prey].mass);
                 if (dist > minDist) {
                     force *= inverseSquare;
                     acc += force;
                 }
                 if (dist < minDist) {
-                    boids[prey].isDead = true;
+                    particles[prey].isDead = true;
                     updatePrey = true;
-                    choosePrey(boids);
+                    choosePrey(particles);
                     trailCount = 0;
                 }
             }
         }
     }
     
-    void fleePredators(vector <Boid> boids) {
-        for (int i=0;i<boids.size();i++) {
-            if (boids[i].ID != ID && boids[i].type == 1) {
+    void fleePredators(vector <ofxParticle> particles) {
+        for (int i=0;i<particles.size();i++) {
+            if (particles[i].ID != ID && particles[i].type == 1) {
                 ofVec3f rep;
                 ofVec3f force;
-                rep.set(boids[i].pos);
+                rep.set(particles[i].pos);
                 force = rep - pos;
                 float dist = force.length();
-                float inverseSquare = (mass * boids[i].mass) / (dist * dist);
+                float inverseSquare = (mass * particles[i].mass) / (dist * dist);
                 if (dist < personalSpace * 10) {
                     force *= inverseSquare;
                     force *= evadeForce;
@@ -269,14 +269,14 @@ public:
         }
     }
     
-    void gobble(vector <Boid> boids) {
-        for (int i=0;i<boids.size();i++) {
-            if (isDead == false && type == 0 && boids[i].type == 1) {
+    void gobble(vector <ofxParticle> particles) {
+        for (int i=0;i<particles.size();i++) {
+            if (isDead == false && type == 0 && particles[i].type == 1) {
                 ofVec3f distance;
-                distance = boids[i].pos - pos;
+                distance = particles[i].pos - pos;
                 float dist = distance.length();
                 if (dist < sc*3) {
-                    boids[i].updatePrey = true;
+                    particles[i].updatePrey = true;
                     isDead = true;
                 }
             }
@@ -287,7 +287,7 @@ public:
         acc += bias;
         vel += acc;
         if (type == 0){
-            vel.limit(boidSpeed);
+            vel.limit(pSpeed);
         }
         if (type == 1) {
             vel.limit(predSpeed);
@@ -381,7 +381,7 @@ public:
         glDrawArrays         (GL_TRIANGLE_STRIP, 0, sphereVertexCount);
     }
     
-    void checkBounds(Boundary outer) {
+    void checkBounds(ofxBoundary outer) {
         if(pos.x > outer.right.x) pos.x = outer.left.x;
         if(pos.x < outer.left.x) pos.x = outer.right.x;
         if(pos.y < outer.top.y) pos.y = outer.bottom.y;
@@ -390,7 +390,7 @@ public:
         if(pos.z < outer.back.z) pos.z = outer.front.z;
     }
     
-    void avoidBounds(Boundary outer) {
+    void avoidBounds(ofxBoundary outer) {
         ofVec3f left(outer.left.x,pos.y,pos.z);
         ofVec3f right(outer.right.x,pos.y,pos.z);
         ofVec3f top(pos.x,outer.top.y,pos.z);
@@ -476,7 +476,7 @@ public:
             steer -= vel;
             //            PVector steer = PVector.sub(desired, velocity);
             if (type == 0) {
-                steer.limit(boidForce);
+                steer.limit(pForce);
             } else {
                 steer.limit(predForce);
             }
@@ -524,7 +524,7 @@ public:
             steer -= vel;
             //            PVector steer = PVector.sub(desired, velocity);
             if (type == 0) {
-                steer.limit(boidForce);
+                steer.limit(pForce);
             } else {
                 steer.limit(predForce);
             }
@@ -544,7 +544,7 @@ public:
             steer -= pos;
             // steer.set(PVector.sub(target,pos));
             // steering vector points towards target (switch target and pos for avoiding)
-            steer.limit(boidForce); //limits the steering force to maxSteerForce
+            steer.limit(pForce); //limits the steering force to maxSteerForce
         } else {
 //            PVector targetOffset = PVector.sub(target,pos);
 //            float distance=targetOffset.mag();
@@ -569,16 +569,16 @@ public:
         return steer;
     }
     
-    ofVec3f separation(vector <Boid> boids) {
+    ofVec3f separation(vector <ofxParticle> particles) {
         ofVec3f posSum;
         ofVec3f repulse;
-        for(int i=0;i<boids.size();i++) {
-            if (boids[i].ID != ID && boids[i].isDead != true) {
-                other.set(boids[i].pos);
+        for(int i=0;i<particles.size();i++) {
+            if (particles[i].ID != ID && particles[i].isDead != true) {
+                other.set(particles[i].pos);
                 dist.set(pos);
                 dist -= other;
                 float d = dist.length();
-                if(type == boids[i].type && d > 0 && d <= personalSpace) {
+                if(type == particles[i].type && d > 0 && d <= personalSpace) {
                     repulse.set(dist);
                     repulse.normalize();
                     repulse /= d;
@@ -589,52 +589,52 @@ public:
         return posSum;
     }
     
-    ofVec3f alignment(vector <Boid> boids) {
+    ofVec3f alignment(vector <ofxParticle> particles) {
         ofVec3f velSum;
         int count = 0;
-        for(int i=0;i<boids.size();i++){
-            if (boids[i].ID != ID && boids[i].isDead != true) {
-                other.set(boids[i].pos);
+        for(int i=0;i<particles.size();i++){
+            if (particles[i].ID != ID && particles[i].isDead != true) {
+                other.set(particles[i].pos);
                 dist.set(pos);
                 dist -= other;
                 float d = dist.length();
                 
-                if (type == 0 && d > 0 && d <= boidPerception) {
-                    velSum += boids[i].vel;
+                if (type == 0 && d > 0 && d <= pPerception) {
+                    velSum += particles[i].vel;
                     count++;
                 }
                 if (type == 1 && d > 0 && d <= predPerception) {
-                    velSum += boids[i].vel;
+                    velSum += particles[i].vel;
                     count++;
                 }
             }
         }
         if(count > 0) {
             velSum /= (float)count;
-            velSum.limit(boidForce);
+            velSum.limit(pForce);
         }
         return velSum;
     }
     
-    ofVec3f cohesion(vector <Boid> boids) {
+    ofVec3f cohesion(vector <ofxParticle> particles) {
         ofVec3f posSum;
         ofVec3f steer;
         posSum.set(origin);
         steer.set(origin);
         int count = 0;
-        for(int i=0;i<boids.size();i++) {
-            if (boids[i].ID != ID && boids[i].isDead != true) {
-                other.set(boids[i].pos);
+        for(int i=0;i<particles.size();i++) {
+            if (particles[i].ID != ID && particles[i].isDead != true) {
+                other.set(particles[i].pos);
                 dist.set(pos);
                 dist -= other;
                 float d = dist.length();
                 
-                if(type == 0 && d > 0 && d <= boidPerception) {
-                    posSum += boids[i].pos;
+                if(type == 0 && d > 0 && d <= pPerception) {
+                    posSum += particles[i].pos;
                     count++;
                 }
                 if(type == 1 && d > 0 && d <= predPerception) {
-                    posSum += boids[i].pos;
+                    posSum += particles[i].pos;
                     count++;
                 }
             }
@@ -645,7 +645,7 @@ public:
         steer.set(pos);
         steer -= posSum;
         if (type == 0){
-            steer.limit(boidForce);
+            steer.limit(pForce);
         }
         if (type == 1) {
             steer.limit(predForce);
@@ -655,7 +655,7 @@ public:
     }
 
     
-    void killStrays(Boundary outer) {
+    void killStrays(ofxBoundary outer) {
         if (pos.x > outer.right.x || pos.x < outer.left.x) {
             isDead = true;
         }

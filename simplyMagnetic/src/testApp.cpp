@@ -4,27 +4,28 @@
 
 void testApp::setup(){
     ofSetFrameRate(60);
+    ofBackground(0);
+    ofSetVerticalSync(true);
+    ofEnableSmoothing();
+//    glEnable(GL_DEPTH_TEST);
+    ofSetCircleResolution(100);
+
     
-    
-    saveFrame = true;
+    saveFrame = false;
     guiDraw = false;
 
     tick = 0.0001;
-    ofBackground(0);
-    snapCounter = 0;
-	memset(snapString, 0, 255);		// clear the string by setting all chars to 0
+	memset(snapString, 0, 255);
     
 //    personalSpace = 1;
 
     cam.resetTransform();
     cam.setFov(60);
     cam.clearParent();
-    cam.lookAt(centre);
     camDraw = true;
-    ps.reset = false;
     
     setupGUI();
-    camPos.set(ofGetWidth()/2, ofGetHeight()/2, worldSize*2);
+    camPos.set(ofGetWidth()/2, ofGetHeight()/2, WORLDSIZE*2);
     
     gui.loadFromXML();
 	gui.show();
@@ -39,30 +40,16 @@ void testApp::update(){
     time = time + tick;
     if (time > 1) {
         updateGUI();
-        ps.update(outer, bodies);
+        ps.update();
         time = 0;
     }
     cam.setPosition(camPos.x, camPos.y, camPos.z);
-    cam.lookAt(centre);
+    cam.lookAt(ps.centre);
 }
 
 
 void testApp::draw(){
     if (camDraw) cam.begin(); cam.draw();
-
-    if (drawBodies) {
-        for (int i=0;i<bodies.size();i++) {
-            bodies[i].draw();
-        }
-    }
-
-    if (drawBounds == true) {
-        outer.draw();
-        ps.drawBounds = true;
-    } else {
-        ps.drawBounds = false;
-    }
-
 
 //    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glEnableClientState      (GL_VERTEX_ARRAY);
@@ -77,8 +64,6 @@ void testApp::draw(){
 }
 
 void testApp::updateGUI() {
-    outer.length = worldSize;
-    outer.updateGUI();
     ps.updateGUI();
 
 }
@@ -90,17 +75,17 @@ void testApp::setupGUI() {
 	gui.addSlider("Separation", ps.separationF, 0, 15);
 	gui.addSlider("Cohesion", ps.cohesionF, 0, 5);
 	gui.addSlider("Alignment", ps.alignF, 0, 5);
-    gui.addSlider("Boid Perception", ps.boidPerception, 1, 500);
+    gui.addSlider("Boid Perception", ps.pPerception, 1, 500);
     gui.addSlider("PersonalSpace", ps.personalSpace, 1, 100);
-    gui.addSlider("Boid Force", ps.boidForce, 0.1, 10);
-    gui.addSlider("Boid Speed", ps.boidSpeed, 0.1, 10);
+    gui.addSlider("Boid Force", ps.pForce, 0.1, 10);
+    gui.addSlider("Boid Speed", ps.pSpeed, 0.1, 10);
     gui.addSlider("Drag", ps.dragF, 0.1, 1);
     gui.addColorPicker("Boid Color", ps.boidColor);
     gui.addSlider("Evade Force", ps.evadeForce, 0.1, 35);
     gui.addToggle("Interact with Bodies", ps.interactWithBodies);
     gui.addToggle("Interact with Predators", ps.interactWithPredators);
     gui.addToggle("Avoid Walls", ps.avoidWalls);
-    gui.addToggle("ps", ps.ps);
+//    gui.addToggle("ps", ps.flock);
     
     gui.addTitle("Predators").setNewColumn(true);
     gui.addSlider("Predator Speed",ps.predSpeed,0.1,10);
@@ -109,10 +94,10 @@ void testApp::setupGUI() {
     
     gui.addTitle("World").setNewColumn(true);
     gui.addSlider("TimeSpeed",tick,0,1);
-    gui.addSlider("Size",worldSize,100,2000);
-    gui.addToggle("Draw Bounds", drawBounds);
-    gui.addToggle("Draw Bodies", drawBodies);    
-    gui.addToggle("Draw ps", ps.drawps);
+    gui.addSlider("Size",ps.worldSize,100,2000);
+    gui.addToggle("Draw Bounds", ps.drawBounds);
+    gui.addToggle("Draw Bodies", ps.drawBodies);
+    gui.addToggle("Draw ps", ps.drawFlock);
     gui.addToggle("Draw Predators", ps.drawPreds);
     gui.addToggle("Reset Boids", ps.reset);
     gui.addSlider("outerBounds",ps.torusOuterRadius,50,1000);

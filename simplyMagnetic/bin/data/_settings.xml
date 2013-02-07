@@ -54,10 +54,6 @@
         <name>Avoid Walls</name>
         <value>1</value>
     </Toggle_Avoid_Walls>
-    <Toggle_Flock>
-        <name>Flock</name>
-        <value>0</value>
-    </Toggle_Flock>
     <SliderFloat_Predator_Speed>
         <name>Predator Speed</name>
         <value>1.386999965</value>
@@ -86,10 +82,10 @@
         <name>Draw Bodies</name>
         <value>0</value>
     </Toggle_Draw_Bodies>
-    <Toggle_Draw_Flock>
-        <name>Draw Flock</name>
+    <Toggle_Draw_ps>
+        <name>Draw ps</name>
         <value>1</value>
-    </Toggle_Draw_Flock>
+    </Toggle_Draw_ps>
     <Toggle_Draw_Predators>
         <name>Draw Predators</name>
         <value>0</value>

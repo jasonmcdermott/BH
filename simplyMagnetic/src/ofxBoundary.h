@@ -1,6 +1,6 @@
 #pragma once
 
-class Boundary {
+class ofxBoundary {
 public:
 
     ofVec3f innerTopLeftBack, innerBotRightFront, outerTopLeftBack, outerBotRightFront;
@@ -11,7 +11,7 @@ public:
     float length = 0;
     float halfLength;
 
-    Boundary() {
+    ofxBoundary() {
 
     }
 

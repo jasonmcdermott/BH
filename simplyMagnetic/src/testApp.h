@@ -1,14 +1,12 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ParticleSystem.h"
+#include "ofxParticleSystem.h"
 #include "ofxSimpleGuiToo.h"
 #include "ofCamera.h"
 #include <time.h>
 
-
-#define ATTRACT 0
-#define REPEL 1
+#define WORLDSIZE 800
 
 class testApp : public ofBaseApp{
 	public:
@@ -27,30 +25,25 @@ class testApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
         void snapFrame();
     
-    ofImage 			img;
+    ofImage img;
     int snapCounter;
-    char 				snapString[255];
+    char snapString[255];
     
     void setupGUI();
     void updateGUI();
     
-    int initBoidNum;
-    ofVec3f centre;
-    ParticleSystem ps;
-    Boundary outer;
-    bool smoothEdges;
+    ofxParticleSystem ps;
+
     float time, tick;
-    
     bool guiDraw, drawBounds, saveFrame;
     
-
     ofCamera cam;
     ofVec3f camPos;
-    vector <ofxBody> bodies;
-    bool	reset, avoidWalls, interactWithBodies, drawBodies, drawFlock, drawPreds;
-    float separationF, cohesionF, alignF, dragF, personalSpace, boidPerception, predPerception, maxForce, maxSpeed;
-    float worldSize;
     bool camDraw;
+//    bool	reset, avoidWalls, interactWithBodies, drawBodies, drawFlock, drawPreds;
+//    float separationF, cohesionF, alignF, dragF, personalSpace, boidPerception, predPerception, maxForce, maxSpeed;
+//    float worldSize;
+
     
 
     
