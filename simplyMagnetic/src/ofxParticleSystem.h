@@ -15,23 +15,24 @@ public:
     vector <ofxBody> bodies;
 
     float col, worldSize;
-    int boidCount;
-    bool reset = false;
+    int particleCount;
+    bool reset = false, renderVertexArray = false, renderPoints = true, renderSphere = false;
     bool avoidWalls, interactWithBodies, drawBodies, drawFlock, drawPreds, interactWithPredators;
-    float separationF, cohesionF, alignF, dragF, personalSpace, pPerception, predPerception, predSpeed, predForce, pForce, evadeForce;
-    ofFloatColor	boidColor;
+    float separationF, cohesionF, alignF, dragF, personalSpace, pPerception, predPerception, predSpeed, predForce, pForce, evadeForce, attractF;
+    ofFloatColor	color;
     float pSpeed;
     bool renderVA = true, flock, drawBounds;
     ofVec3f circleLocation;
-    float torusInnerRadius, torusOuterRadius;
+    float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, bodyChargeF;
+    float bodyMass;
     
     ofxParticleSystem() {
         worldSize = 800;
         centre.set(ofGetWidth()/2,ofGetHeight()/2,0);
         circleLocation.set(centre);
-        bodies.push_back(ofxBody( ofVec3f(centre), 30, ATTRACT));
+        bodies.push_back(ofxBody( ofVec3f(centre.x,centre.y,centre.z), 10, 0));
         outer.setDims(centre,worldSize);
-        addBoids(200, outer, centre,0);
+        addParticles(50, outer, centre,0);
     }
     
     void update() {
@@ -41,108 +42,81 @@ public:
         if (reset == true) {
             reset = false;
         }
-
-        if (torusInnerRadius == torusOuterRadius - 5) {
-            torusOuterRadius = torusInnerRadius + 1;
+        if (torusInnerRadius > torusOuterRadius) {
+            torusOuterRadius = torusInnerRadius + 5;
         }
-        if (torusOuterRadius == torusInnerRadius) {
-            torusInnerRadius = torusOuterRadius - 1;
+        if (torusOuterRadius < torusInnerRadius) {
+            torusInnerRadius = torusOuterRadius - 5;
         }
+    }
         
-        if (interactWithPredators) {
-//            for (int i=0;i<particles.size();i++) {
-//                if (particles[i].type == 1) {
-//                    ofVec3f mid;
-//                    ofVec3f steer;
-//                    mid.set(findBoidsMidst());
-//                    steer.set(particles[i].pos);
-//                    steer -= mid;
-//                    steer.limit(predForce);
-//                    particles[i].acc += -steer;
-//                }
-//            }
-        }
-    }
-    
-    int countLiveBoids() {
-        int liveBoidCount = 0;
-        for (int i=0;i<particles.size();i++) {
-            if (particles[i].isDead == false) {
-                liveBoidCount ++;
-            }
-        }
-        return liveBoidCount;
-    }
-    
-    ofVec3f findBoidsMidst() {
-        ofVec3f steer;
-        steer.set(0,0,0);
-        int count = 0;
-        for(int i=0;i<particles.size();i++) {
-            if (particles[i].type == 0 && particles[i].isDead != true) {
-                steer += particles[i].pos;
-            }
-        }
-        int c = countLiveBoids();
-        steer /= c;
-        return steer;
-    }
-    
-    void draw() {
+    void render() {
 
-        if (drawBodies) {
-            for (int i=0;i<bodies.size();i++) {
-                bodies[i].draw();
+        
+        if (renderSphere) {
+            for (int i=0;i<particles.size();i++) {
+//                particles[i].renderSphere();
+            }
+            
+            if (drawBodies) {
+                for (int i=0;i<bodies.size();i++) {
+//                    bodies[i].renderSphere();
+                }
             }
         }
         
-        if (drawBounds == true) {
-            outer.draw();
-            drawBounds = true;
-        } else {
-            drawBounds = false;
-        }
+        if (renderPoints) {
+            static GLfloat attenuate[3] = { 0.0, 0.0, 0.01 };  //Const, linear, quadratic
 
+//            glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, attenuate);
+            glEnable(GL_POINT_SIZE);
+            glPointSize(10);
 
-//        int n = particles.size();
-//        glBegin(GL_POINTS);
-//        for(int i = 0; i < n; i++)
-//            particles[i].draw();
-//        glEnd();
+            glBegin(GL_POINTS);
 
-        glEnable(GL_POINT_SIZE);
-        glPointSize(3);
-        glBegin(GL_POINTS);
-        for (int i=0;i<particles.size();i++) {
-            if (drawFlock == true && particles[i].type == 0) {
-                glVertex3f(particles[i].pos.x,particles[i].pos.y,particles[i].pos.z);
+            for (int i=0;i<particles.size();i++) {
+                particles[i].renderPoints();
             }
+
+            if (drawBodies) {
+                for (int i=0;i<bodies.size();i++) {
+                    bodies[i].renderPoints();
+                }
+            }
+
+            glEnd();
         }
-        glEnd();
+
+        if (renderVertexArray) {
+            if (drawBodies) {
+                for (int i=0;i<bodies.size();i++) {
+//                    bodies[i].renderVA();
+                }
+            }
+            glEnableClientState(GL_VERTEX_ARRAY);
+            for(int i=0;i<particles.size();i++) {
+                particles[i].renderVertexArray();
+            }
+            glDisableClientState(GL_VERTEX_ARRAY);
+        }
         
-//        for(int i=0;i<particles.size();i++) {
-//            if (drawFlock == true && particles[i].type == 0) {
-//                particles[i].render();
-//            }
-//            if (drawPreds == true && particles[i].type == 1) {
-//                particles[i].render();
-//            }
-//        }
         
         if (drawBounds) {
             ofFill();
-            ofSetColor(255);
+            ofSetColor(125);
             ofSphere(circleLocation, torusInnerRadius * 0.45);
             ofNoFill();
+            ofSetColor(125);
             ofSphere(circleLocation, torusOuterRadius * 0.55);
+            outer.draw();
         }
 
     }
     
-    void addBoids(int n, ofxBoundary outer, ofVec3f centre, int type_) {
+    void addParticles(int n, ofxBoundary outer, ofVec3f centre, int type_) {
         for(int i=0;i<n;i++) {
-            particles.push_back(ofxParticle(boidCount, outer, centre, type_));
-            boidCount ++;
+            particles.push_back(ofxParticle(particleCount, outer, centre, type_));
+            particleCount ++;
         }
     }
     
@@ -155,22 +129,22 @@ public:
             particles[i].cohesionF = cohesionF;
             particles[i].alignF = alignF;
             particles[i].pPerception = pPerception;
-            particles[i].predPerception = predPerception;
             particles[i].personalSpace = personalSpace;
-//            particles[i].pForce = pForce;
-            particles[i].pSpeed = pSpeed;
-//            particles[i].predSpeed = predSpeed;
             particles[i].pForce = pForce;
-            particles[i].evadeForce = evadeForce;
+            particles[i].pSpeed = pSpeed;
             particles[i].reset = reset;
             particles[i].interactWithBodies = interactWithBodies;
-            particles[i].interactWithPredators = interactWithPredators;
-            particles[i].boidColor = boidColor;
-            particles[i].renderVA = renderVA;
+            particles[i].color = color;
             particles[i].torusOuterRadius = torusOuterRadius;
             particles[i].torusInnerRadius = torusInnerRadius;
-            particles[i].flock = flock;
             particles[i].circleLocation.set(circleLocation);
+            particles[i].outerBoundF = outerBoundF;
+            particles[i].innerBoundF = innerBoundF;
+            particles[i].attractF = attractF;
+            particles[i].bodyChargeF = bodyChargeF;
+        }
+        for (int i=0;i<bodies.size();i++) {
+            bodies[i].mass = bodyMass;
         }
     }
     

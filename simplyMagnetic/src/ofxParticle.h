@@ -6,132 +6,61 @@
 class ofxParticle {
 public:
     
-    ofVec3f pos, vel, acc, ali, coh, sep, origin, bias;
-    float personalSpace, pPerception, predPerception;
-    bool avoidWalls = true;
-    ofVec3f other, dist;
-    float c;
-    float pSpeed = 3;
-    float predSpeed = 6;
-    float pForce = .5;
-    float predForce = 0.9;
-    float evadeForce = 1;
-    float h;
-    float sc = 3;
-    float flap = 0;
-    float t = 0;
-    int ID;
-    bool randomPrey = false;
+    ofVec3f pos, vel, acc, ali, coh, sep, att, origin, bias, outerTemp, other, dist, circleLocation;
+    float pSpeed = 3, pForce = .5, h, sc = 3, t = 0, c, attractF = 1, separationF = 1, alignF = 1, cohesionF = 1, dragF = 0.95, mass = 1, personalSpace = 15, pPerception = 50;
     string a;
-    ofVec3f outerTemp;
-    float separationF, alignF, cohesionF, dragF, mass;
-    bool isDead, interactWithBodies, interactWithPredators;
-    bool reset = false, updatePrey, renderVA = true;
-    int age, type, prey, trailCount = 0;
-    ofFloatColor	boidColor;
-    bool flock;
-    ofVec3f circleLocation;
-    float torusInnerRadius, torusOuterRadius;
-    bool outside, inside;
-
-    
-    
-    // LAMARCHE SPHERICAL COMPONENTS
-    ofVec3f triangleStripVertexHandle, triangleStripNormalHandle,triangleFanVertexHandle, triangleFanNormalHandle;
-    GLint triangleStripVertexCount,triangleFanVertexCount,slices,stacks;
-    float radius;
+    bool reset = false, isDead = false, interactWithBodies = true, renderVA = true, avoidWalls = true, outside, inside;
+    int age = 0, type, prey, trailCount = 0, ID;
+    ofFloatColor	color;
+    float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, bodyChargeF;
     
     // BAKER SPHERICAL COMPONENTS
-
     float degreeIncrement         = 20;      // 10 degrees between
     int   sphereVertexCount      = (180 / degreeIncrement) * (360 / degreeIncrement) * 4;
-    
     float M_PI_Divided_By_180;
-
-    //      GLfloat sphereTexCoord2f [2592][2];
-    
-    //      http://forums.inside3d.com/viewtopic.php?f=10&t=4835
-    //      Based on http://www.swiftless.com/tutorials/opengl/sphere.html
-    //      Overhauled and streamlined.
     
     
-    
-    
-    ofxParticle() {
-        
-    }
+    ofxParticle() {}
     
     ofxParticle(int ID_, ofxBoundary outer, ofVec3f centre_, int type_) {
         origin.set(centre_);
         ID = ID_;
         type = type_;
-        initBoid(outer);
+        initParticle(outer);
     }
 
-    void initBoid(ofxBoundary outer) {
-//        origin.set(origin.x + ofRandom(-outer.halfLength,outer.halfLength),origin.y + ofRandom(-outer.halfLength,outer.halfLength),origin.z+ ofRandom(-outer.halfLength,outer.halfLength));
-        
-        origin.set(origin.x + ofRandom(-10,10),origin.y + ofRandom(-10,10) ,origin.z + ofRandom(-10,10));
-        isDead = false;
-        age = 0;
-        mass = 1;
+    void initParticle(ofxBoundary outer) {
+        origin.set(origin.x + ofRandom(-100,100),origin.y + ofRandom(-100,100) ,origin.z + ofRandom(-100,100));
         pos.set(origin);
         vel.set(0,0,0);
         acc.set(0,0,0);
         bias.set(0,0,0);
-        personalSpace = 15;
-        c = 255;
-        separationF = 1;
-        cohesionF = 1;
-        dragF = 0.95;
         a = "";
+        degreeIncrement         = 15;
+        sphereVertexCount      = (180 / degreeIncrement) * (360 / degreeIncrement) * 4;
         M_PI_Divided_By_180 = M_PI/180;
         circleLocation.set(0,0,0);
-
-
-
-        if (type == 0) {
-            alignF = 1;
-            interactWithBodies = true;
-            pPerception = 50;
-            sc = 3;
-        } else {
-            alignF = 0;
-            prey = ofRandom(0,ID);
-            interactWithBodies = false;
-            predPerception = 500;
-            sc = 10;
-        }
-        createSphere();
     }
     
     void run(vector <ofxParticle> particles, ofxBoundary outer, vector <ofxBody> bodies) {
         if (reset == true) {
-            initBoid(outer);
+            initParticle(outer);
         }
         if (isDead != true) {
             age ++;
-            if (type == 0) {
-                if (interactWithBodies == true) {
-                    interactingBodies(bodies);
-                }
-            }
-            if (interactWithPredators) {
-                if (type == 1) {
-                }
-            }
-            if (flock == true) {
-                flocking(particles);
+            if (interactWithBodies == true) {
+                interactingBodies(bodies);
             }
 
-            moveTowardCentre();
-            moveTowardOuter();
+            flocking(particles);
+            moveInward();
+            moveOutward();
 
             if (avoidWalls) {
-                avoidBounds(outer);
-                killStrays(outer);
+//                avoidBounds(outer);
+//                killStrays(outer);
             } else {
-                checkBounds(outer);
+//                checkBounds(outer);
             }
             move();
         }
@@ -141,184 +70,87 @@ public:
     void interactingBodies(vector <ofxBody> bodies) {
         for (int i=0;i<bodies.size();i++) {
             if (bodies[i].charge == 0) {
-                ofVec3f att;
-                ofVec3f force;
-                att.set(bodies[i].pos);
-                force = att - pos;
-                float dist = force.length();
+//                ofVec3f bodyAtt(pos);
+                ofVec3f bodyForce(bodies[i].pos);
+//                bodyAtt.set(bodies[i].pos);
+//                bodyForce = bodyAtt - pos;
+                bodyForce -= pos;
+                
+                float dist = bodyForce.length();
                 float inverseSquare = (mass * bodies[i].mass) / (dist * dist);
-                float minDist = (sc + bodies[i].mass);
-                if (dist > minDist) {
-                    force *= inverseSquare;
-                    acc += force;
-                } else if (dist < minDist) {
-                    force *= inverseSquare;
-                    force += -force;
-                    acc += force;
-                }
+//                float minDist = (bodies[i].mass*2);
+                
+//                if (dist > bodies[i].mass) {
+                    bodyForce *= inverseSquare;
+                    bodyForce *= bodyChargeF;
+                    acc += bodyForce;
+//                }
+//                else if (dist < minDist) {
+//                    bodyForce *= inverseSquare;
+//                    bodyForce += -bodyForce;
+//                    acc += bodyForce;
+//                }
             }
             if (bodies[i].charge > 0) {
                 ofVec3f rep;
-                ofVec3f force;
+                ofVec3f bodyForce;
                 rep.set(bodies[i].pos);
-                force = rep - pos;
-                float dist = force.length();
+                bodyForce = rep - pos;
+                float dist = bodyForce.length();
                 float inverseSquare = (mass * bodies[i].mass) / (dist * dist);
                 if (dist < mass * 300) {
-                    force *= inverseSquare;
-                    acc += -force;
+//                    bodyForce *= inverseSquare;
+                    bodyForce *= bodyChargeF;                    
+                    acc += -bodyForce;
                 }
             }
         }
     }
 
     void flocking(vector <ofxParticle> particles) {
-        ali = alignment(particles);
-        sep = separation(particles);
-        coh = cohesion(particles);
+        ali = align(particles);
+        sep = separate(particles);
+        coh = cohere(particles);
+//        att = attract(particles);
         
         ali *= alignF;
         sep *= separationF;
         coh *= cohesionF;
+//        att *= attractF;
         
         acc += ali;
         acc += sep;
         acc += coh;
-        
-        if (interactWithPredators) {
-            if (type == 0) {
-                fleePredators(particles);
-            }
-            if (type == 1) {
-                trailPrey(particles);
-            }
-//            gobble(particles);
-        }
+//        acc += att;
     }
     
-    void choosePrey(vector <ofxParticle> particles) {
-        if (randomPrey == false) {
-            float closest = 500;
-            for (int i=0;i<particles.size();i++) {
-                if (particles[i].isDead == false && particles[i].type == 0) {
-                    ofVec3f distance;
-                    distance = particles[i].pos - pos;
-                    float dist = distance.length();
-                    if (dist < closest) {
-                        prey = i;
-                    }
-                }
-            }
-        } else {
-            for (int i=0;i<particles.size();i++) {
-                int rand = int(ofRandom(0,particles.size()));
-                if (particles[i].isDead == false && particles[i].type == 0) {
-                    prey = i;
-                } else {
-                    choosePrey(particles);
-                }
-            }
-        }
-    }
-
-    void trailPrey(vector <ofxParticle> particles) {
-        trailCount++;
-        if (trailCount > 200) {
-            updatePrey = true;
-            choosePrey(particles);
-            trailCount = 0;
-        }
-        for (int i=0;i<particles.size();i++) {
-            if (particles[prey].type == 0) {
-                ofVec3f att;
-                ofVec3f force;
-                att.set(particles[prey].pos);
-                force = att - pos;
-                float dist = force.length();
-                float inverseSquare = (mass * particles[prey].mass) / (dist * dist);
-                float minDist = (sc + particles[prey].mass);
-                if (dist > minDist) {
-                    force *= inverseSquare;
-                    acc += force;
-                }
-                if (dist < minDist) {
-                    particles[prey].isDead = true;
-                    updatePrey = true;
-                    choosePrey(particles);
-                    trailCount = 0;
-                }
-            }
-        }
-    }
-    
-    void fleePredators(vector <ofxParticle> particles) {
-        for (int i=0;i<particles.size();i++) {
-            if (particles[i].ID != ID && particles[i].type == 1) {
-                ofVec3f rep;
-                ofVec3f force;
-                rep.set(particles[i].pos);
-                force = rep - pos;
-                float dist = force.length();
-                float inverseSquare = (mass * particles[i].mass) / (dist * dist);
-                if (dist < personalSpace * 10) {
-                    force *= inverseSquare;
-                    force *= evadeForce;
-                    acc += -force;
-                }
-            }
-        }
-    }
-    
-    void gobble(vector <ofxParticle> particles) {
-        for (int i=0;i<particles.size();i++) {
-            if (isDead == false && type == 0 && particles[i].type == 1) {
-                ofVec3f distance;
-                distance = particles[i].pos - pos;
-                float dist = distance.length();
-                if (dist < sc*3) {
-                    particles[i].updatePrey = true;
-                    isDead = true;
-                }
-            }
-        }
-    }
-
     void move() {
-        acc += bias;
+//        acc += bias;
         vel += acc;
-        if (type == 0){
-            vel.limit(pSpeed);
-        }
-        if (type == 1) {
-            vel.limit(predSpeed);
-        }
+        vel.limit(pSpeed);
         vel *= dragF; // add a drag force into the mix.
         pos += vel; //add velocity to position
         acc *= 0; //reset acceleration
     }
-    
-    void createSphere() {
-    }
-    
+        
     void render() {
         if (isDead != true) {
             ofPushMatrix();
             ofTranslate(pos.x,pos.y,pos.z);
-            if (type == 0) {
-                ofSetColor(boidColor);
-            } else if (type == 1) {
-                ofSetColor(200,0,0);
-//                ofDrawBitmapString(ofToString(trailCount,0),5,10);
-            }
+            ofSetColor(color);
 //            ofSphere(0,0,0,sc);
 //            ofBox(0,0,0,sc);
 
             if (renderVA) {
-                createSphere();
-                renderVASphere();
+                renderVertexArray();
             }
             ofPopMatrix();
         }
+    }
+    
+    void renderPoints() {
+        ofSetColor(color);
+        glVertex3f(pos.x,pos.y,pos.z);
     }
     
     void renderVALaMarche() {
@@ -339,8 +171,11 @@ public:
     }
     
     
-    void renderVASphere() {
-        GLfloat sphereVertex3f [648][3];
+    void renderVertexArray() {
+        ofPushMatrix();
+        ofTranslate(pos.x,pos.y,pos.z);
+        ofSetColor(color);
+        GLfloat sphereVertex3f [sphereVertexCount][3];
         int vertNum = 0;
         
         for (float z = 0; z <= 180 - degreeIncrement; z += degreeIncrement)  // Iterate through height of sphere of Z
@@ -375,10 +210,10 @@ public:
                 vertNum ++; // ^ Bottom Right
                 
             }
-        
 
         glVertexPointer         (3, GL_FLOAT, 0, sphereVertex3f);
         glDrawArrays         (GL_TRIANGLE_STRIP, 0, sphereVertexCount);
+        ofPopMatrix();
     }
     
     void checkBounds(ofxBoundary outer) {
@@ -404,6 +239,9 @@ public:
         ofVec3f avBottom(avoid(bottom,true));
         ofVec3f avFront(avoid(front,true));
         ofVec3f avBack(avoid(back,true));
+        
+        
+        
         
         acc += avLeft;
         acc += avRight;
@@ -441,22 +279,18 @@ public:
         }
     }
     
-    void moveTowardCentre() {
+    void moveInward() {
         
-        ofVec3f desired;
-        
-        // Predict location 5 (arbitrary choice) frames ahead
-        ofVec3f predict(vel);
-        predict *= 25;
+        ofVec3f desired;        
+        ofVec3f predict;
+        predict.set(vel);
+        predict *= pPerception / 5;
         ofVec3f futureLocation(pos);
-        
         futureLocation += predict;
-        
         ofVec3f distFromCircleCentre(circleLocation);
-        
         distFromCircleCentre -= futureLocation;
-        
         float distance = distFromCircleCentre.length();
+
         if (distance > torusOuterRadius * 0.6) {
             ofVec3f toCenter(circleLocation);
             toCenter -= pos;
@@ -466,74 +300,51 @@ public:
             
             desired.set(toCenter);
             desired.normalize();
-            if (type == 0) {
-                desired *= 10;
+            if (alignF > 0 || separationF > 0 || cohesionF > 0) {
+                desired *= (alignF + separationF + cohesionF)*2;
             }
+            desired *= outerBoundF;
         }
         
         if (desired.length() != 0) {
             ofVec3f steer(desired);
             steer -= vel;
-            //            PVector steer = PVector.sub(desired, velocity);
-            if (type == 0) {
-                steer.limit(pForce);
-            } else {
-                steer.limit(predForce);
-            }
+            steer.limit(pForce);
             acc += steer;
         }
         
-        //        ofSetColor(255,0,0);
-        //        ofCircle(futureLocation.x,futureLocation.y,4,4);
-        
     }
     
-    void moveTowardOuter() {
+    void moveOutward() {
         
         ofVec3f desired;
-
-        // Predict location 5 (arbitrary choice) frames ahead
-        ofVec3f predict(vel);
-        predict *= 25;
+        ofVec3f predict;
+        predict.set(vel);
+        predict *= pPerception / 5;
         ofVec3f futureLocation(pos);
-
         futureLocation += predict;
-
         ofVec3f distFromCircleCentre(circleLocation);
-
         distFromCircleCentre -= futureLocation;
-
         float distance = distFromCircleCentre.length();
-        if (distance < torusInnerRadius * 0.6) {        
+        if (distance < torusInnerRadius * 0.5) {
             ofVec3f toCenter(circleLocation);
             toCenter += pos;
             toCenter.normalize();
             toCenter *= vel.length();
             toCenter += vel;
-            
-            desired.set(toCenter);
+            desired.set(-toCenter);
             desired.normalize();
-            if (type == 0) {
-                desired *= 10;
+            if (alignF > 0 || separationF > 0 || cohesionF > 0) {
+                desired *= (alignF + separationF + cohesionF)*5;
             }
+            desired *= innerBoundF;
         }
-
-        
         if (desired.length() != 0) {
             ofVec3f steer(desired);
             steer -= vel;
-            //            PVector steer = PVector.sub(desired, velocity);
-            if (type == 0) {
-                steer.limit(pForce);
-            } else {
-                steer.limit(predForce);
-            }
+            steer.limit(pForce);
             acc += steer;
-        }
-        
-        //        ofSetColor(255,0,0);
-        //        ofCircle(futureLocation.x,futureLocation.y,4,4);
-        
+        }        
     }
 
     
@@ -546,10 +357,13 @@ public:
             // steering vector points towards target (switch target and pos for avoiding)
             steer.limit(pForce); //limits the steering force to maxSteerForce
         } else {
-//            PVector targetOffset = PVector.sub(target,pos);
-//            float distance=targetOffset.mag();
-//            float rampedSpeed = maxSpeed*(distance/100);
-//            float clippedSpeed = min(rampedSpeed,maxSpeed);
+            ofVec3f targetOffset(pos);
+            targetOffset -= target;
+            float distance = targetOffset.length();
+            float rampedSpeed = pSpeed * (distance/100);
+
+//   want to finish this off, although it's more important for the boids code...
+//            float clippedSpeed = min(rampedSpeed,pSpeed);
 //            PVector desiredVelocity = PVector.mult(targetOffset,(clippedSpeed/distance));
 //            steer.set(PVector.sub(desiredVelocity,vel));
         }
@@ -562,14 +376,19 @@ public:
         steer.set(pos);
         steer -= target;
         float distance = steer.length();
-        if (weight) {
-            steer *= (1 / (distance * distance));
+        if (distance < pPerception) {
+            if (weight) {
+                steer *= (1 / (distance * distance));
+            }
+            steer *= 2;
+            return steer;
+        } else {
+            steer.set(0,0);
+            return steer;
         }
-        steer *= 15;
-        return steer;
     }
     
-    ofVec3f separation(vector <ofxParticle> particles) {
+    ofVec3f separate(vector <ofxParticle> particles) {
         ofVec3f posSum;
         ofVec3f repulse;
         for(int i=0;i<particles.size();i++) {
@@ -589,7 +408,27 @@ public:
         return posSum;
     }
     
-    ofVec3f alignment(vector <ofxParticle> particles) {
+    ofVec3f attract(vector <ofxParticle> particles) {
+        ofVec3f posSum;
+        ofVec3f attract;
+        for(int i=0;i<particles.size();i++) {
+            if (particles[i].ID != ID && particles[i].isDead != true) {
+                other.set(particles[i].pos);
+                dist.set(pos);
+                dist -= other;
+                float d = dist.length();
+                if(type == particles[i].type && d > 0 && d <= pPerception) {
+                    attract.set(dist);
+                    attract.normalize();
+                    attract /= d;
+                    posSum -= attract;
+                }
+            }
+        }
+        return posSum;
+    }
+    
+    ofVec3f align(vector <ofxParticle> particles) {
         ofVec3f velSum;
         int count = 0;
         for(int i=0;i<particles.size();i++){
@@ -599,11 +438,7 @@ public:
                 dist -= other;
                 float d = dist.length();
                 
-                if (type == 0 && d > 0 && d <= pPerception) {
-                    velSum += particles[i].vel;
-                    count++;
-                }
-                if (type == 1 && d > 0 && d <= predPerception) {
+                if (d > 0 && d <= pPerception) {
                     velSum += particles[i].vel;
                     count++;
                 }
@@ -616,7 +451,7 @@ public:
         return velSum;
     }
     
-    ofVec3f cohesion(vector <ofxParticle> particles) {
+    ofVec3f cohere(vector <ofxParticle> particles) {
         ofVec3f posSum;
         ofVec3f steer;
         posSum.set(origin);
@@ -629,11 +464,7 @@ public:
                 dist -= other;
                 float d = dist.length();
                 
-                if(type == 0 && d > 0 && d <= pPerception) {
-                    posSum += particles[i].pos;
-                    count++;
-                }
-                if(type == 1 && d > 0 && d <= predPerception) {
+                if(d > 0 && d <= pPerception) {
                     posSum += particles[i].pos;
                     count++;
                 }
@@ -644,13 +475,7 @@ public:
         }
         steer.set(pos);
         steer -= posSum;
-        if (type == 0){
-            steer.limit(pForce);
-        }
-        if (type == 1) {
-            steer.limit(predForce);
-        }
-    
+        steer.limit(pForce);
         return steer;
     }
 
@@ -667,17 +492,6 @@ public:
         }
     }
 
-//    void getSolidSphere(ofVec3f **triangleStripVertexHandle,
-//                        ofVec3f **triangleStripNormalHandle,
-//                        GLint *triangleStripVertexCount,
-//                        ofVec3f **triangleFanVertexHandle,
-//                        ofVec3f **triangleFanNormalHandle,
-//                        GLint *triangleFanVertexCount,
-//                        glFloat radius,
-//                        GLint slices,
-//                        GLint stacks) {
-//        
-//    }
     
 };
 

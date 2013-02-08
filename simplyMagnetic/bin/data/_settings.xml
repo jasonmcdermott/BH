@@ -1,7 +1,7 @@
 <controls>
     <SliderFloat_Separation>
         <name>Separation</name>
-        <value>0.000000000</value>
+        <value>12.600000381</value>
     </SliderFloat_Separation>
     <SliderFloat_Cohesion>
         <name>Cohesion</name>
@@ -11,68 +11,52 @@
         <name>Alignment</name>
         <value>0.000000000</value>
     </SliderFloat_Alignment>
-    <SliderFloat_Boid_Perception>
-        <name>Boid Perception</name>
-        <value>73.354995728</value>
-    </SliderFloat_Boid_Perception>
+    <SliderFloat_Attraction>
+        <name>Attraction</name>
+        <value>0.000000000</value>
+    </SliderFloat_Attraction>
+    <SliderFloat_Perception>
+        <name>Perception</name>
+        <value>243.015014648</value>
+    </SliderFloat_Perception>
     <SliderFloat_PersonalSpace>
         <name>PersonalSpace</name>
-        <value>14.859999657</value>
+        <value>94.555000305</value>
     </SliderFloat_PersonalSpace>
-    <SliderFloat_Boid_Force>
-        <name>Boid Force</name>
-        <value>1.139499903</value>
-    </SliderFloat_Boid_Force>
-    <SliderFloat_Boid_Speed>
-        <name>Boid Speed</name>
-        <value>7.722999573</value>
-    </SliderFloat_Boid_Speed>
+    <SliderFloat_Force>
+        <name>Force</name>
+        <value>1.881999969</value>
+    </SliderFloat_Force>
+    <SliderFloat_Speed>
+        <name>Speed</name>
+        <value>9.257499695</value>
+    </SliderFloat_Speed>
     <SliderFloat_Drag>
         <name>Drag</name>
-        <value>0.464499980</value>
+        <value>0.981999993</value>
     </SliderFloat_Drag>
-    <ColorPicker_Boid_Color>
-        <name>Boid Color</name>
-        <values_0>1.000000000</values_0>
-        <values_1>0.189999998</values_1>
-        <values_2>0.574999988</values_2>
-        <values_3>1.000000000</values_3>
-    </ColorPicker_Boid_Color>
-    <SliderFloat_Evade_Force>
-        <name>Evade Force</name>
-        <value>18.248001099</value>
-    </SliderFloat_Evade_Force>
+    <ColorPicker_Color>
+        <name>Color</name>
+        <values_0>0.000000000</values_0>
+        <values_1>0.764999986</values_1>
+        <values_2>0.959999979</values_2>
+        <values_3>0.944999993</values_3>
+    </ColorPicker_Color>
     <Toggle_Interact_with_Bodies>
         <name>Interact with Bodies</name>
-        <value>0</value>
+        <value>1</value>
     </Toggle_Interact_with_Bodies>
-    <Toggle_Interact_with_Predators>
-        <name>Interact with Predators</name>
-        <value>0</value>
-    </Toggle_Interact_with_Predators>
     <Toggle_Avoid_Walls>
         <name>Avoid Walls</name>
-        <value>1</value>
+        <value>0</value>
     </Toggle_Avoid_Walls>
-    <SliderFloat_Predator_Speed>
-        <name>Predator Speed</name>
-        <value>1.386999965</value>
-    </SliderFloat_Predator_Speed>
-    <SliderFloat_Predator_Force>
-        <name>Predator Force</name>
-        <value>4.950999737</value>
-    </SliderFloat_Predator_Force>
-    <SliderFloat_Predator_Perception>
-        <name>Predator Perception</name>
-        <value>1.000000000</value>
-    </SliderFloat_Predator_Perception>
     <SliderFloat_TimeSpeed>
         <name>TimeSpeed</name>
-        <value>0.985000014</value>
+        <value>1.000000000</value>
     </SliderFloat_TimeSpeed>
     <SliderFloat_Size>
         <name>Size</name>
-        <value>1249.500000000</value>
+        <value>2000.000000000</value>
     </SliderFloat_Size>
     <Toggle_Draw_Bounds>
         <name>Draw Bounds</name>
@@ -80,7 +64,7 @@
     </Toggle_Draw_Bounds>
     <Toggle_Draw_Bodies>
         <name>Draw Bodies</name>
-        <value>0</value>
+        <value>1</value>
     </Toggle_Draw_Bodies>
     <Toggle_Draw_ps>
         <name>Draw ps</name>
@@ -88,30 +72,46 @@
     </Toggle_Draw_ps>
     <Toggle_Draw_Predators>
         <name>Draw Predators</name>
-        <value>0</value>
+        <value>1</value>
     </Toggle_Draw_Predators>
-    <Toggle_Reset_Boids>
-        <name>Reset Boids</name>
+    <Toggle_Reset>
+        <name>Reset</name>
         <value>0</value>
-    </Toggle_Reset_Boids>
+    </Toggle_Reset>
     <SliderFloat_outerBounds>
         <name>outerBounds</name>
-        <value>981.000000000</value>
+        <value>246.549987793</value>
     </SliderFloat_outerBounds>
     <SliderFloat_innerBounds>
         <name>innerBounds</name>
-        <value>88.000000000</value>
+        <value>20.674999237</value>
     </SliderFloat_innerBounds>
+    <SliderFloat_innerBoundForce>
+        <name>innerBoundForce</name>
+        <value>1.098000050</value>
+    </SliderFloat_innerBoundForce>
+    <SliderFloat_outerBoundForce>
+        <name>outerBoundForce</name>
+        <value>0.271499991</value>
+    </SliderFloat_outerBoundForce>
+    <SliderFloat_bodyChargeForce>
+        <name>bodyChargeForce</name>
+        <value>0.621500015</value>
+    </SliderFloat_bodyChargeForce>
+    <SliderFloat_bodyMass>
+        <name>bodyMass</name>
+        <value>82.674995422</value>
+    </SliderFloat_bodyMass>
     <SliderFloat_Camera_Position_X>
         <name>Camera Position X</name>
-        <value>20.000000000</value>
+        <value>380.000000000</value>
     </SliderFloat_Camera_Position_X>
     <SliderFloat_Camera_Position_Y>
         <name>Camera Position Y</name>
-        <value>20.000000000</value>
+        <value>520.000000000</value>
     </SliderFloat_Camera_Position_Y>
     <SliderFloat_Camera_Position_Z>
         <name>Camera Position Z</name>
-        <value>-60.000000000</value>
+        <value>-180.000000000</value>
     </SliderFloat_Camera_Position_Z>
 </controls>

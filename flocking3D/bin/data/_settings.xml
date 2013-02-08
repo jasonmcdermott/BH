@@ -44,7 +44,7 @@
     </SliderFloat_Evade_Force>
     <Toggle_Interact_with_Bodies>
         <name>Interact with Bodies</name>
-        <value>0</value>
+        <value>1</value>
     </Toggle_Interact_with_Bodies>
     <Toggle_Interact_with_Predators>
         <name>Interact with Predators</name>
@@ -52,7 +52,7 @@
     </Toggle_Interact_with_Predators>
     <Toggle_Avoid_Walls>
         <name>Avoid Walls</name>
-        <value>1</value>
+        <value>0</value>
     </Toggle_Avoid_Walls>
     <Toggle_Flock>
         <name>Flock</name>

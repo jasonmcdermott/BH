@@ -25,13 +25,13 @@ class testApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
         void snapFrame();
     
+    void setupGUI();
+    void updateGUI();
+    void setupCam();
+    
     ofImage img;
     int snapCounter;
     char snapString[255];
-    
-    void setupGUI();
-    void updateGUI();
-    
     ofxParticleSystem ps;
 
     float time, tick;
