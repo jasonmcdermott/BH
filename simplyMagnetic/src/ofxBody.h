@@ -28,12 +28,9 @@ public:
         mass = mass + m;
     }
     
-    void draw() {
-        ofPushMatrix();
-        ofTranslate(pos.x,pos.y,pos.z);
+    void render() {
         ofSetColor(255);
-        ofSphere(0,0,0,radius);
-        ofPopMatrix();
+        ofSphere(pos,radius);
     }
     
     void renderVA() {

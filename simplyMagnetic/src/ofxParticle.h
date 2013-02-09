@@ -8,11 +8,13 @@ public:
     
     ofVec3f pos, vel, acc, ali, coh, sep, att, origin, bias, outerTemp, other, dist, circleLocation;
     float pSpeed = 3, pForce = .5, h, sc = 3, t = 0, c, attractF = 1, separationF = 1, alignF = 1, cohesionF = 1, dragF = 0.95, mass = 1, personalSpace = 15, pPerception = 50;
-    string a;
-    bool reset = false, isDead = false, interactWithBodies = true, renderVA = true, avoidWalls = true, outside, inside;
+    string string;
+    bool reset = false, isDead = false, interactWithBodies = true, renderVA = true, avoidWalls = true, outside, inside, orbit;
     int age = 0, type, prey, trailCount = 0, ID;
     ofFloatColor	color;
-    float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, bodyChargeF;
+    float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, G;
+    ofVec3f cross, a, b, distToCent, crossVec;
+    float distToCentre, orbitF, randomX, randomY;
     
     // BAKER SPHERICAL COMPONENTS
     float degreeIncrement         = 20;      // 10 degrees between
@@ -20,13 +22,20 @@ public:
     float M_PI_Divided_By_180;
     
     
+    ofTexture texture;
+    
+    
     ofxParticle() {}
     
     ofxParticle(int ID_, ofxBoundary outer, ofVec3f centre_, int type_) {
         origin.set(centre_);
+        mass = ofRandom(0.4,2);
         ID = ID_;
         type = type_;
         initParticle(outer);
+        sc = mass;
+        randomX = ofRandom(-1,1);
+        randomY = ofRandom(-1,1);
     }
 
     void initParticle(ofxBoundary outer) {
@@ -35,37 +44,104 @@ public:
         vel.set(0,0,0);
         acc.set(0,0,0);
         bias.set(0,0,0);
-        a = "";
+        string = "";
         degreeIncrement         = 15;
         sphereVertexCount      = (180 / degreeIncrement) * (360 / degreeIncrement) * 4;
         M_PI_Divided_By_180 = M_PI/180;
         circleLocation.set(0,0,0);
+        a.set(pos);
+        b.set(pos);
+        age = 0;
+//        ofVec3f aPlus(ofRandom(-10,10),ofRandom(-10,10),ofRandom(-10,10));
+//        a += aPlus;
+
     }
     
     void run(vector <ofxParticle> particles, ofxBoundary outer, vector <ofxBody> bodies) {
         if (reset == true) {
             initParticle(outer);
         }
+        
+        
         if (isDead != true) {
             age ++;
+            if (orbit) {
+                crossProd(bodies);
+            }
+
             if (interactWithBodies == true) {
                 interactingBodies(bodies);
             }
 
-            flocking(particles);
-            moveInward();
-            moveOutward();
-
-            if (avoidWalls) {
-//                avoidBounds(outer);
-//                killStrays(outer);
-            } else {
-//                checkBounds(outer);
+            if (separationF > 0) {
+                separate(particles);
             }
+            
+            if (alignF > 0 || cohesionF > 0) {
+                flocking(particles);
+            }
+            
+            moveInward();
+//            moveOutward();
             move();
         }
     }
     
+    float calcDistToCentre() {
+        distToCent.set(pos);
+        distToCent -= circleLocation;
+        distToCentre = distToCent.length();
+        return distToCentre;
+    }
+    
+    void crossProd(vector <ofxBody> bodies) {
+
+        a.set(pos);
+        a.x += 5;
+//        a.y += randomY;
+        cross.set(pos);
+        
+//        b.set(pos);
+//        
+//        ofPushMatrix();
+//        ofRotateX(circleLocation.x);
+//        ofRotateY(circleLocation.y);
+//        ofRotateZ(circleLocation.z);
+//        ofPopMatrix();
+//        
+//        b.normalize();
+//        b /= 5;
+        
+        
+//        ofVec3f b(a);
+//        b -= pos;
+        
+        // Vector1 (x1, y1, z1) and Vector2 (x2, y2, z2), and one output vector, OutVect(ox, oy, oz)
+        
+        // pos = 1
+        // a = 2
+        
+        // cross.x = (y1 * z2) - (y2 * z1)
+        // cross.y = (z1 * x2) - (z2 * x1)
+        // cross.z = (x1 * y2) - (x2 * y1)
+
+        //  cross.x = (circleLocation.y * a.z) - (a.y * circleLocation.z);
+        //  cross.y = (circleLocation.z * a.x) - (a.z * circleLocation.x);
+        //  cross.z = (circleLocation.x * a.y) - (a.x * circleLocation.y);
+        
+        cross = circleLocation.crossed(a);
+//        cross.normalize();
+//        cross *= 2;
+//        cross.normalize();
+//        cross *= (orbitF * 0.1);
+        
+//        crossVec.set(pos);
+//        crossVec += cross;
+//        acc += cross / (age/10);
+        
+        acc -= cross * (orbitF * 0.1);
+        
+    }
     
     void interactingBodies(vector <ofxBody> bodies) {
         for (int i=0;i<bodies.size();i++) {
@@ -77,19 +153,11 @@ public:
                 bodyForce -= pos;
                 
                 float dist = bodyForce.length();
-                float inverseSquare = (mass * bodies[i].mass) / (dist * dist);
-//                float minDist = (bodies[i].mass*2);
+                float inverseSquare = G * ((mass * bodies[i].mass) / (dist * dist));
                 
-//                if (dist > bodies[i].mass) {
-                    bodyForce *= inverseSquare;
-                    bodyForce *= bodyChargeF;
-                    acc += bodyForce;
-//                }
-//                else if (dist < minDist) {
-//                    bodyForce *= inverseSquare;
-//                    bodyForce += -bodyForce;
-//                    acc += bodyForce;
-//                }
+                bodyForce *= inverseSquare;
+                acc += bodyForce;
+                
             }
             if (bodies[i].charge > 0) {
                 ofVec3f rep;
@@ -97,10 +165,9 @@ public:
                 rep.set(bodies[i].pos);
                 bodyForce = rep - pos;
                 float dist = bodyForce.length();
-                float inverseSquare = (mass * bodies[i].mass) / (dist * dist);
+                float inverseSquare = (G * mass * bodies[i].mass) / (dist * dist);
                 if (dist < mass * 300) {
-//                    bodyForce *= inverseSquare;
-                    bodyForce *= bodyChargeF;                    
+                    bodyForce *= inverseSquare;
                     acc += -bodyForce;
                 }
             }
@@ -109,48 +176,47 @@ public:
 
     void flocking(vector <ofxParticle> particles) {
         ali = align(particles);
-        sep = separate(particles);
         coh = cohere(particles);
-//        att = attract(particles);
         
         ali *= alignF;
-        sep *= separationF;
         coh *= cohesionF;
-//        att *= attractF;
         
         acc += ali;
-        acc += sep;
         acc += coh;
-//        acc += att;
     }
     
     void move() {
-//        acc += bias;
         vel += acc;
         vel.limit(pSpeed);
-        vel *= dragF; // add a drag force into the mix.
-        pos += vel; //add velocity to position
-        acc *= 0; //reset acceleration
+        vel *= dragF;
+        pos += vel;
+        acc *= 0;
     }
-        
+    
     void render() {
         if (isDead != true) {
-            ofPushMatrix();
-            ofTranslate(pos.x,pos.y,pos.z);
-            ofSetColor(color);
-//            ofSphere(0,0,0,sc);
-//            ofBox(0,0,0,sc);
 
-            if (renderVA) {
-                renderVertexArray();
-            }
-            ofPopMatrix();
+//            ofSetColor(255,0,255); // purple line between particle and centre
+//            ofLine(pos, circleLocation);
+            
+            ofSetColor(color);       // box
+            ofBox(pos.x,pos.y,pos.z,sc);
+            
+            ofSetColor(0,0,255); // blue line indicating 'up' (may be indicating 'left', it makes no difference)
+            ofLine(pos,a);
+            ofTriangle(circleLocation,pos,a);
+            ofSetColor(255);   // white line pointing perpendicularly away from the centre
+            ofLine(pos,cross);
+
+            
         }
     }
     
     void renderPoints() {
-        ofSetColor(color);
-        glVertex3f(pos.x,pos.y,pos.z);
+        if (isDead != true) {
+            ofSetColor(color);
+            glVertex3f(pos.x,pos.y,pos.z);
+        }
     }
     
     void renderVALaMarche() {
@@ -300,17 +366,17 @@ public:
             
             desired.set(toCenter);
             desired.normalize();
-            if (alignF > 0 || separationF > 0 || cohesionF > 0) {
-                desired *= (alignF + separationF + cohesionF)*2;
-            }
+//            if (alignF > 0 || separationF > 0 || cohesionF > 0) {
+//                desired *= (alignF + separationF + cohesionF)*2;
+//            }
             desired *= outerBoundF;
         }
         
         if (desired.length() != 0) {
-            ofVec3f steer(desired);
-            steer -= vel;
-            steer.limit(pForce);
-            acc += steer;
+            ofVec3f moveVec(desired);
+            moveVec -= vel;
+            moveVec.limit(pForce);
+            acc += moveVec;
         }
         
     }
@@ -369,8 +435,6 @@ public:
         }
         return steer;
     }
-    
-
     ofVec3f avoid(ofVec3f target, bool weight) {
         ofVec3f steer;
         steer.set(pos);
@@ -387,8 +451,7 @@ public:
             return steer;
         }
     }
-    
-    ofVec3f separate(vector <ofxParticle> particles) {
+    void separate(vector <ofxParticle> particles) {
         ofVec3f posSum;
         ofVec3f repulse;
         for(int i=0;i<particles.size();i++) {
@@ -400,12 +463,14 @@ public:
                 if(type == particles[i].type && d > 0 && d <= personalSpace) {
                     repulse.set(dist);
                     repulse.normalize();
-                    repulse /= d;
+                    repulse /= ((mass * particles[i].mass) * (d * d));
                     posSum += repulse;
                 }
             }
         }
-        return posSum;
+        sep.set(posSum);
+        sep *= separationF;
+        acc += sep;
     }
     
     ofVec3f attract(vector <ofxParticle> particles) {
@@ -427,7 +492,6 @@ public:
         }
         return posSum;
     }
-    
     ofVec3f align(vector <ofxParticle> particles) {
         ofVec3f velSum;
         int count = 0;
@@ -450,7 +514,6 @@ public:
         }
         return velSum;
     }
-    
     ofVec3f cohere(vector <ofxParticle> particles) {
         ofVec3f posSum;
         ofVec3f steer;
@@ -478,8 +541,6 @@ public:
         steer.limit(pForce);
         return steer;
     }
-
-    
     void killStrays(ofxBoundary outer) {
         if (pos.x > outer.right.x || pos.x < outer.left.x) {
             isDead = true;

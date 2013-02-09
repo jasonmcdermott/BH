@@ -40,6 +40,8 @@ class testApp : public ofBaseApp{
     ofCamera cam;
     ofVec3f camPos;
     bool camDraw;
+    
+
 //    bool	reset, avoidWalls, interactWithBodies, drawBodies, drawFlock, drawPreds;
 //    float separationF, cohesionF, alignF, dragF, personalSpace, boidPerception, predPerception, maxForce, maxSpeed;
 //    float worldSize;

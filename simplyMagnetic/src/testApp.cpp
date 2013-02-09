@@ -18,8 +18,8 @@ void testApp::setup(){
 }
 
 void testApp::update(){
-
-//    ofEnableAlphaBlending();
+	ofEnableBlendMode(OF_BLENDMODE_ADD);
+    ofEnableAlphaBlending();
     glEnable(GL_DEPTH_TEST);
     time = time + tick;
     if (time > 1) {
@@ -35,8 +35,9 @@ void testApp::update(){
 
 void testApp::draw(){
     if (camDraw) cam.begin(); cam.draw();
-//    glEnable(GL_BLEND);
-//    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glEnable(GL_BLEND);
+//    glBlendFunc(GL_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     ps.render();
     
     if (camDraw) cam.end();
@@ -60,34 +61,36 @@ void testApp::setupGUI() {
 	gui.addSlider("Alignment", ps.alignF, 0, 5);
     gui.addSlider("Attraction", ps.attractF, 0, 1.00);
     gui.addSlider("Perception", ps.pPerception, 1, 500);
-    gui.addSlider("PersonalSpace", ps.personalSpace, 1, 100);
+    gui.addSlider("PersonalSpace", ps.personalSpace, 1, 400);
     gui.addSlider("Force", ps.pForce, 0.1, 10);
-    gui.addSlider("Speed", ps.pSpeed, 0.1, 10);
+    gui.addSlider("Speed", ps.pSpeed, 0.1, 60);
     gui.addSlider("Drag", ps.dragF, 0.1, 1);
     gui.addColorPicker("Color", ps.color);
-    gui.addToggle("Interact with Bodies", ps.interactWithBodies);
-    gui.addToggle("Avoid Walls", ps.avoidWalls);
-//    gui.addToggle("ps", ps.flock);
+    gui.addSlider("orbitForce",ps.orbitF,0.001,4);
+    gui.addSlider("bodyMass",ps.bodyMass,1,100);
     
-    gui.addTitle("World").setNewColumn(true);
-    gui.addSlider("TimeSpeed",tick,0,1);
-    gui.addSlider("Size",ps.worldSize,100,2000);
+    gui.addTitle("Graphics").setNewColumn(true);
     gui.addToggle("Draw Bounds", ps.drawBounds);
     gui.addToggle("Draw Bodies", ps.drawBodies);
-    gui.addToggle("Draw ps", ps.drawFlock);
-    gui.addToggle("Draw Predators", ps.drawPreds);
+    gui.addToggle("Orbit", ps.orbit);
     gui.addToggle("Reset", ps.reset);
-    gui.addSlider("outerBounds",ps.torusOuterRadius,50,300);
-    gui.addSlider("innerBounds", ps.torusInnerRadius, 5,290);
-    gui.addSlider("innerBoundForce",ps.innerBoundF,0.1,50);
-    gui.addSlider("outerBoundForce",ps.outerBoundF,0.1,5);
-    gui.addSlider("bodyChargeForce",ps.bodyChargeF,0.1,15);
-    gui.addSlider("bodyMass",ps.bodyMass,1,100);
     
     gui.addTitle("Camera").setNewColumn(true);
     gui.addSlider("Camera Position X", camPos.x, -2000, 2000);
     gui.addSlider("Camera Position Y", camPos.y, -2000, 2000);
     gui.addSlider("Camera Position Z", camPos.z, -2000, 2000);
+
+    gui.addTitle("World").setNewColumn(true);
+    gui.addSlider("TimeSpeed",tick,0,1);
+    gui.addSlider("Size",ps.worldSize,100,2000);
+    gui.addSlider("outerBounds",ps.torusOuterRadius,50,300);
+    gui.addSlider("innerBounds", ps.torusInnerRadius, 5,290);
+    gui.addSlider("innerBoundForce",ps.innerBoundF,0.1,50);
+    gui.addSlider("outerBoundForce",ps.outerBoundF,0.1,50);
+    gui.addSlider("Gravity",ps.G,0.1,50);
+    gui.addToggle("Interact with Bodies", ps.interactWithBodies);
+    gui.addToggle("Avoid Walls", ps.avoidWalls);
+    
     gui.loadFromXML();
 	gui.show();
 }
@@ -110,7 +113,7 @@ void testApp::snapFrame() {
     
     if (ofGetFrameNum() % 900 == 0 && saveFrame == true){
 		img.grabScreen(0,0,ofGetWidth(),ofGetHeight());
-		string fileName = "../../../../../images/psing3D_"+ofGetTimestampString()+".png";
+		string fileName = "../../../../../images/particles_"+ofGetTimestampString()+".png";
 		img.saveImage(fileName);
 	}
 }

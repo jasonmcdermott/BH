@@ -16,15 +16,23 @@ public:
 
     float col, worldSize;
     int particleCount;
-    bool reset = false, renderVertexArray = false, renderPoints = true, renderSphere = false;
-    bool avoidWalls, interactWithBodies, drawBodies, drawFlock, drawPreds, interactWithPredators;
+    bool reset = false, renderVertexArray = false, renderPoints = false, renderSphere = false, renderNormal = false, renderVBO = true;
+    bool avoidWalls, interactWithBodies, drawBodies, drawFlock, orbit, interactWithPredators;
     float separationF, cohesionF, alignF, dragF, personalSpace, pPerception, predPerception, predSpeed, predForce, pForce, evadeForce, attractF;
     ofFloatColor	color;
     float pSpeed;
     bool renderVA = true, flock, drawBounds;
     ofVec3f circleLocation;
-    float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, bodyChargeF;
-    float bodyMass;
+    float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, G;
+    float bodyMass, orbitF;
+    
+    ofVbo vbo;
+    ofShader shader;
+    ofTexture texture;
+    
+    // upload the data to the vbo
+    vector <ofVec3f> points;
+    vector <ofVec3f> sizes;
     
     ofxParticleSystem() {
         worldSize = 800;
@@ -32,7 +40,23 @@ public:
         circleLocation.set(centre);
         bodies.push_back(ofxBody( ofVec3f(centre.x,centre.y,centre.z), 10, 0));
         outer.setDims(centre,worldSize);
-        addParticles(50, outer, centre,0);
+        addParticles(100, outer, centre, 0);
+
+        // load the texure
+
+        ofDisableArbTex();
+        ofLoadImage(texture, "dot.png");
+
+        for (int i=0;i<particles.size();i++) {
+            points.push_back(particles[i].pos);
+            sizes.push_back(ofVec3f(particles[i].sc * 50));
+        }
+
+        
+        // load the shader
+        if(shader.load("shader")) {
+            printf("Shader is loaded\n");
+        }
     }
     
     void update() {
@@ -51,7 +75,53 @@ public:
     }
         
     void render() {
+        
+        if (renderVBO) {
+            
+            glDepthMask(GL_FALSE);
 
+            // upload the data to the vbo
+            ofSetColor(color);
+            for (int i=0;i<particles.size();i++) {
+                points[i].set(particles[i].pos);
+                sizes[i].set(particles[i].sc * 50);
+            }
+            
+            int total = (int)points.size();
+            vbo.setVertexData(&points[0], total, GL_DYNAMIC_DRAW);
+            vbo.setNormalData(&sizes[0], total, GL_DYNAMIC_DRAW);
+            
+            // this makes everything look glowy :)
+            ofEnableBlendMode(OF_BLENDMODE_ADD);
+            ofEnablePointSprites();
+            
+            shader.begin();
+            
+            texture.bind();
+            vbo.draw(GL_POINTS, 0, (int)points.size());
+            texture.unbind();
+            shader.end();
+            
+            ofDisablePointSprites();
+            ofDisableBlendMode();
+            
+            
+            ofEnableAlphaBlending();
+            
+            glDepthMask(GL_TRUE);
+        }
+        
+        
+        if (renderNormal) {
+            for (int i=0;i<particles.size();i++) {
+                particles[i].render();
+            }
+            if (drawBodies) {
+                for (int i=0;i<bodies.size();i++) {
+                        bodies[i].render();
+                }
+            }
+        }
         
         if (renderSphere) {
             for (int i=0;i<particles.size();i++) {
@@ -67,7 +137,6 @@ public:
         
         if (renderPoints) {
             static GLfloat attenuate[3] = { 0.0, 0.0, 0.01 };  //Const, linear, quadratic
-
 //            glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, attenuate);
             glEnable(GL_POINT_SIZE);
             glPointSize(10);
@@ -83,7 +152,6 @@ public:
                     bodies[i].renderPoints();
                 }
             }
-
             glEnd();
         }
 
@@ -133,6 +201,7 @@ public:
             particles[i].pForce = pForce;
             particles[i].pSpeed = pSpeed;
             particles[i].reset = reset;
+            particles[i].orbit = orbit;
             particles[i].interactWithBodies = interactWithBodies;
             particles[i].color = color;
             particles[i].torusOuterRadius = torusOuterRadius;
@@ -141,7 +210,8 @@ public:
             particles[i].outerBoundF = outerBoundF;
             particles[i].innerBoundF = innerBoundF;
             particles[i].attractF = attractF;
-            particles[i].bodyChargeF = bodyChargeF;
+            particles[i].G = G;
+            particles[i].orbitF = orbitF;
         }
         for (int i=0;i<bodies.size();i++) {
             bodies[i].mass = bodyMass;
