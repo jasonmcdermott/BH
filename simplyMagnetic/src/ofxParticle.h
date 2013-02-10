@@ -9,36 +9,47 @@ public:
     ofVec3f pos, vel, acc, ali, coh, sep, att, origin, bias, outerTemp, other, dist, circleLocation;
     float pSpeed = 3, pForce = .5, h, sc = 3, t = 0, c, attractF = 1, separationF = 1, alignF = 1, cohesionF = 1, dragF = 0.95, mass = 1, personalSpace = 15, pPerception = 50;
     string string;
-    bool reset = false, isDead = false, interactWithBodies = true, renderVA = true, avoidWalls = true, outside, inside, orbit;
+    bool reset = false, isDead = false, interactWithBodies = true, renderVA = true, avoidBoundaries = true, outside, inside, orbit, gravitate;
     int age = 0, type, prey, trailCount = 0, ID;
     ofFloatColor	color;
     float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, G;
     ofVec3f cross, a, b, distToCent, crossVec;
     float distToCentre, orbitF, randomX, randomY;
+    float blur, diameter, thickness, Alpha, numSides, middleRadius;
+    int shapeType;
+    GLfloat cols[3];
     
     // BAKER SPHERICAL COMPONENTS
     float degreeIncrement         = 20;      // 10 degrees between
     int   sphereVertexCount      = (180 / degreeIncrement) * (360 / degreeIncrement) * 4;
     float M_PI_Divided_By_180;
     
-    
     ofTexture texture;
     
+    // Bright Hearts Gradients!
+    int BHGShapeType, BHGNumSides;
+    float BHGBlur, BHGThickness, BHGDiameter;
     
     ofxParticle() {}
     
-    ofxParticle(int ID_, ofxBoundary outer, ofVec3f centre_, int type_) {
+    ofxParticle(int ID_, ofVec3f centre_, int type_) {
         origin.set(centre_);
-        mass = ofRandom(0.4,2);
+        mass = ofRandom(5,10);
         ID = ID_;
         type = type_;
-        initParticle(outer);
+        initParticle();
         sc = mass;
+        Alpha = 255;
+        numSides = 100;
+        shapeType = 0;
         randomX = ofRandom(-1,1);
         randomY = ofRandom(-1,1);
+        cols[0] = 200;
+        cols[1] = 255;
+        cols[2] = 255;
     }
 
-    void initParticle(ofxBoundary outer) {
+    void initParticle() {
         origin.set(origin.x + ofRandom(-100,100),origin.y + ofRandom(-100,100) ,origin.z + ofRandom(-100,100));
         pos.set(origin);
         vel.set(0,0,0);
@@ -52,112 +63,45 @@ public:
         a.set(pos);
         b.set(pos);
         age = 0;
-//        ofVec3f aPlus(ofRandom(-10,10),ofRandom(-10,10),ofRandom(-10,10));
-//        a += aPlus;
-
+        diameter = sc * 2;
+        blur = 3;
     }
     
     void run(vector <ofxParticle> particles, ofxBoundary outer, vector <ofxBody> bodies) {
         if (reset == true) {
-            initParticle(outer);
+            initParticle();
         }
-        
         
         if (isDead != true) {
             age ++;
-            if (orbit) {
-                crossProd(bodies);
-            }
-
-            if (interactWithBodies == true) {
-                interactingBodies(bodies);
-            }
-
-            if (separationF > 0) {
-                separate(particles);
-            }
+            if (orbit) crossProd(bodies);
+            if (gravitate) interactingBodies(bodies);
+            if (separationF > 0) separate(particles);            
+            if (alignF > 0) align(particles);
+            if (cohesionF > 0) cohere(particles);
+            if (avoidBoundaries) moveInward(); moveOutward();
             
-            if (alignF > 0 || cohesionF > 0) {
-                flocking(particles);
-            }
-            
-            moveInward();
-//            moveOutward();
             move();
         }
     }
-    
-    float calcDistToCentre() {
-        distToCent.set(pos);
-        distToCent -= circleLocation;
-        distToCentre = distToCent.length();
-        return distToCentre;
-    }
-    
-    void crossProd(vector <ofxBody> bodies) {
 
-        a.set(pos);
-        a.x += 5;
-//        a.y += randomY;
-        cross.set(pos);
-        
-//        b.set(pos);
-//        
-//        ofPushMatrix();
-//        ofRotateX(circleLocation.x);
-//        ofRotateY(circleLocation.y);
-//        ofRotateZ(circleLocation.z);
-//        ofPopMatrix();
-//        
-//        b.normalize();
-//        b /= 5;
-        
-        
-//        ofVec3f b(a);
-//        b -= pos;
-        
-        // Vector1 (x1, y1, z1) and Vector2 (x2, y2, z2), and one output vector, OutVect(ox, oy, oz)
-        
-        // pos = 1
-        // a = 2
-        
-        // cross.x = (y1 * z2) - (y2 * z1)
-        // cross.y = (z1 * x2) - (z2 * x1)
-        // cross.z = (x1 * y2) - (x2 * y1)
-
-        //  cross.x = (circleLocation.y * a.z) - (a.y * circleLocation.z);
-        //  cross.y = (circleLocation.z * a.x) - (a.z * circleLocation.x);
-        //  cross.z = (circleLocation.x * a.y) - (a.x * circleLocation.y);
-        
-        cross = circleLocation.crossed(a);
-//        cross.normalize();
-//        cross *= 2;
-//        cross.normalize();
-//        cross *= (orbitF * 0.1);
-        
-//        crossVec.set(pos);
-//        crossVec += cross;
-//        acc += cross / (age/10);
-        
-        acc -= cross * (orbitF * 0.1);
-        
-    }
-    
+    // MOVEMENT
     void interactingBodies(vector <ofxBody> bodies) {
         for (int i=0;i<bodies.size();i++) {
             if (bodies[i].charge == 0) {
-//                ofVec3f bodyAtt(pos);
                 ofVec3f bodyForce(bodies[i].pos);
-//                bodyAtt.set(bodies[i].pos);
-//                bodyForce = bodyAtt - pos;
                 bodyForce -= pos;
-                
                 float dist = bodyForce.length();
                 float inverseSquare = G * ((mass * bodies[i].mass) / (dist * dist));
-                
-                bodyForce *= inverseSquare;
-                acc += bodyForce;
-                
+                if (dist > bodies[i].mass + mass) {
+                    bodyForce *= inverseSquare;
+                    acc += bodyForce;
+//                    dragF = 1;
+                }
+                else {
+                    dragF = 0.95;
+                    acc -= bodyForce / 50;
+                }
             }
             if (bodies[i].charge > 0) {
                 ofVec3f rep;
@@ -173,16 +117,64 @@ public:
             }
         }
     }
+    
+    void crossProd(vector <ofxBody> bodies) {
+        
+        a.set(pos);
+        a.y += 50;
+        cross.set(circleLocation);
+    
+//        cross = circleLocation.crossed(pos);
+        
+        cross.x = (pos.y * a.z) - (a.y * pos.z);
+        cross.y = (pos.z * a.x) - (a.z * pos.x);
+        cross.z = (pos.x * a.y) - (a.x * pos.y);
+        
+//        cross *=;
+        
+//        cross /= 1000;
+        acc -= cross * orbitF;
 
-    void flocking(vector <ofxParticle> particles) {
-        ali = align(particles);
-        coh = cohere(particles);
         
-        ali *= alignF;
-        coh *= cohesionF;
+        //        b.set(pos);
+        //
+        //        ofPushMatrix();
+        //        ofRotateX(circleLocation.x);
+        //        ofRotateY(circleLocation.y);
+        //        ofRotateZ(circleLocation.z);
+        //        ofPopMatrix();
+        //
+        //        b.normalize();
+        //        b /= 5;
         
-        acc += ali;
-        acc += coh;
+        
+        //        ofVec3f b(a);
+        //        b -= pos;
+        // Vector1 (x1, y1, z1) and Vector2 (x2, y2, z2), and one output vector, OutVect(ox, oy, oz)
+        
+        // pos = 1
+        // a = 2
+        
+//        cross.x = (y1 * z2) - (y2 * z1)
+//        cross.y = (z1 * x2) - (z2 * x1)
+//        cross.z = (x1 * y2) - (x2 * y1)
+        
+
+        
+
+
+        
+        //        cross.normalize();
+        //        cross *= 2;
+        //        cross.normalize();
+        //        cross *= (orbitF * 0.1);
+        
+        //        crossVec.set(pos);
+        //        crossVec += cross;
+        //        acc += cross / (age/10);
+
+        
+        
     }
     
     void move() {
@@ -193,22 +185,13 @@ public:
         acc *= 0;
     }
     
-    void render() {
+    // RENDER
+    void render() {}
+    
+    void renderSphere() {
         if (isDead != true) {
-
-//            ofSetColor(255,0,255); // purple line between particle and centre
-//            ofLine(pos, circleLocation);
-            
-            ofSetColor(color);       // box
-            ofBox(pos.x,pos.y,pos.z,sc);
-            
-            ofSetColor(0,0,255); // blue line indicating 'up' (may be indicating 'left', it makes no difference)
-            ofLine(pos,a);
-            ofTriangle(circleLocation,pos,a);
-            ofSetColor(255);   // white line pointing perpendicularly away from the centre
-            ofLine(pos,cross);
-
-            
+            ofSetColor(color);
+            ofSphere(pos.x,pos.y,pos.z,sc);
         }
     }
     
@@ -236,85 +219,147 @@ public:
 //        glDisableClientState(GL_NORMAL_ARRAY);
     }
     
-    
     void renderVertexArray() {
+        if (isDead != true) {
+            ofPushMatrix();
+            ofTranslate(pos.x,pos.y,pos.z);
+            ofSetColor(color);
+            GLfloat sphereVertex3f [sphereVertexCount][3];
+            int vertNum = 0;
+            
+            for (float z = 0; z <= 180 - degreeIncrement; z += degreeIncrement)  // Iterate through height of sphere of Z
+                for (float c = 0; c <= 360 - degreeIncrement; c += degreeIncrement) { // Each point of the circle X, Y of "C"
+                    
+                    sphereVertex3f   [vertNum][0] = sinf( (c) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f   [vertNum][1] = cosf( (c) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f   [vertNum][2] = cosf( (z) * M_PI_Divided_By_180 )*sc;
+                    //                sphereTexCoord2f [vertNum][0] = (c)     / 360;
+                    //                sphereTexCoord2f [vertNum][1] = (2 * z) / 360;
+                    vertNum ++; // ^ Top Left
+                    
+                    sphereVertex3f    [vertNum][0] = sinf( (c) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f    [vertNum][1] = cosf( (c) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f    [vertNum][2] = cosf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
+                    //                sphereTexCoord2f [vertNum][0] = (c)               / 360;
+                    //                sphereTexCoord2f [vertNum][1] = (2 * (z + degreeIncrement)) / 360;
+                    vertNum ++; // ^ Top Right
+                    
+                    sphereVertex3f    [vertNum][0] = sinf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f    [vertNum][1] = cosf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f    [vertNum][2] = cosf( (z) * M_PI_Divided_By_180 )*sc;
+                    //                sphereTexCoord2f [vertNum][0] = (c + degreeIncrement) / 360;
+                    //                sphereTexCoord2f [vertNum][1] = (2 * z)     / 360;
+                    vertNum ++; // ^ Bottom Left
+                    
+                    sphereVertex3f    [vertNum][0] = sinf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f    [vertNum][1] = cosf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
+                    sphereVertex3f    [vertNum][2] = cosf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
+                    //                sphereTexCoord2f [vertNum][0] = (c + degreeIncrement)       / 360;
+                    //                sphereTexCoord2f [vertNum][1] = (2 * (z + degreeIncrement)) / 360;
+                    vertNum ++; // ^ Bottom Right
+                    
+                }
+
+            glVertexPointer         (3, GL_FLOAT, 0, sphereVertex3f);
+            glDrawArrays         (GL_TRIANGLE_STRIP, 0, sphereVertexCount);
+            ofPopMatrix();
+        }
+    }
+    
+    void renderDebug() {
+        if (isDead != true) {
+            
+            ofSetColor(255,0,255); // purple line between particle and centre
+            ofLine(pos, circleLocation);
+            
+//            ofSetColor(color);       // sphere
+//            ofSphere(pos.x,pos.y,pos.z,sc);
+
+//            ofSetColor(0,0,255); // blue line indicating 'up'
+//            ofTriangle(circleLocation,pos,a);
+
+            ofSetColor(0,0,255);
+            ofLine(pos,a);
+            
+            ofSetColor(255);   // white line pointing perpendicularly away from the centre
+            ofSphere(cross,1);
+            ofLine(pos,cross);
+//            ofDrawBitmapString(ofToString(cross,2),cross.x,cross.y,cross.z);
+        }
+    }
+    
+    void renderBHGradients() {
+        if (isDead != true) {
+            if (BHGShapeType == 0) {
+                drawGradient(mass-BHGBlur,0,color.a,0,BHGNumSides);
+                drawGradient(mass,mass-BHGBlur,0,0,BHGNumSides);
+            } else if (BHGShapeType == 1) {
+                drawGradient(mass+BHGThickness-BHGBlur,mass-BHGThickness+BHGBlur,color.a,0,BHGNumSides);
+                drawGradient(mass+BHGThickness,mass+BHGThickness-BHGBlur,0,0,BHGNumSides);
+                drawGradient(mass-BHGThickness,mass-BHGThickness+BHGBlur,0,0,BHGNumSides);
+            } else if (BHGShapeType == 2) {
+                drawGradient(mass-BHGThickness,mass+BHGThickness,0,0,BHGNumSides);
+                drawGradient(mass+BHGThickness+BHGThickness*0.05, mass+BHGThickness, 0, 0, BHGNumSides);
+            }
+        }
+    }
+    
+    void drawGradient(float opaque_, float transp_, float opac_, float blur_, int ns_) {
+        
         ofPushMatrix();
         ofTranslate(pos.x,pos.y,pos.z);
-        ofSetColor(color);
-        GLfloat sphereVertex3f [sphereVertexCount][3];
-        int vertNum = 0;
         
-        for (float z = 0; z <= 180 - degreeIncrement; z += degreeIncrement)  // Iterate through height of sphere of Z
-            for (float c = 0; c <= 360 - degreeIncrement; c += degreeIncrement) { // Each point of the circle X, Y of "C"
-                
-                sphereVertex3f   [vertNum][0] = sinf( (c) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f   [vertNum][1] = cosf( (c) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f   [vertNum][2] = cosf( (z) * M_PI_Divided_By_180 )*sc;
-                //                sphereTexCoord2f [vertNum][0] = (c)     / 360;
-                //                sphereTexCoord2f [vertNum][1] = (2 * z) / 360;
-                vertNum ++; // ^ Top Left
-                
-                sphereVertex3f    [vertNum][0] = sinf( (c) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f    [vertNum][1] = cosf( (c) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f    [vertNum][2] = cosf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
-                //                sphereTexCoord2f [vertNum][0] = (c)               / 360;
-                //                sphereTexCoord2f [vertNum][1] = (2 * (z + degreeIncrement)) / 360;
-                vertNum ++; // ^ Top Right
-                
-                sphereVertex3f    [vertNum][0] = sinf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f    [vertNum][1] = cosf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f    [vertNum][2] = cosf( (z) * M_PI_Divided_By_180 )*sc;
-                //                sphereTexCoord2f [vertNum][0] = (c + degreeIncrement) / 360;
-                //                sphereTexCoord2f [vertNum][1] = (2 * z)     / 360;
-                vertNum ++; // ^ Bottom Left
-                
-                sphereVertex3f    [vertNum][0] = sinf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f    [vertNum][1] = cosf( (c + degreeIncrement) * M_PI_Divided_By_180 ) * sinf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
-                sphereVertex3f    [vertNum][2] = cosf( (z + degreeIncrement) * M_PI_Divided_By_180 )*sc;
-                //                sphereTexCoord2f [vertNum][0] = (c + degreeIncrement)       / 360;
-                //                sphereTexCoord2f [vertNum][1] = (2 * (z + degreeIncrement)) / 360;
-                vertNum ++; // ^ Bottom Right
-                
-            }
+        GLfloat* ver_coords = new GLfloat[ (ns_+1) * 4];
+        GLfloat* ver_cols = new GLfloat[ (ns_+1) * 8];
 
-        glVertexPointer         (3, GL_FLOAT, 0, sphereVertex3f);
-        glDrawArrays         (GL_TRIANGLE_STRIP, 0, sphereVertexCount);
+        float angle;
+        float angleSize =  2*PI/ns_;
+        
+        //        float Range = abs(opaque-transp);
+        
+        if (opaque_ < transp_) {
+            middleRadius = opaque_ - ((transp_-opaque_)+blur_);
+            //            middleradius = ofMap(blur_,0,1,opaque,transp);
+        } else {
+            middleRadius = opaque_ - ((transp_-opaque_)+blur_);
+            //            middleradius = ofMap(blur_,0,1,transp,opaque);
+        }
+        
+        middleRadius = (opaque_ + transp_)/2;
+        
+        for (int i=0; i< (1+ns_); i++) {
+            angle = i* angleSize;
+            ver_coords[i*4+0] = (opaque_*cos(angle));
+            ver_coords[i*4+1] = (opaque_*sin(angle));
+            ver_cols[i*8+0] = color.r;
+            ver_cols[i*8+1] = color.g;
+            ver_cols[i*8+2] = color.b;
+            ver_cols[i*8+3] = opac_;
+            ver_coords[i*4+2] = (transp_*cos(angle));
+            ver_coords[i*4+3] = (transp_*sin(angle));
+            ver_cols[i*8+4] = color.r;
+            ver_cols[i*8+5] = color.g;
+            ver_cols[i*8+6] = color.b;
+            ver_cols[i*8+7] = color.a;
+        }
+        
+        
+        glVertexPointer( 2, GL_FLOAT, 0, ver_coords);
+        glColorPointer(4, GL_FLOAT, 0, ver_cols);
+        glDrawArrays( GL_TRIANGLE_STRIP, 0, ( ns_ + 1 ) * 2 );
+        
+        delete[] ver_coords;
+        delete[] ver_cols;
         ofPopMatrix();
     }
     
-    void checkBounds(ofxBoundary outer) {
-        if(pos.x > outer.right.x) pos.x = outer.left.x;
-        if(pos.x < outer.left.x) pos.x = outer.right.x;
-        if(pos.y < outer.top.y) pos.y = outer.bottom.y;
-        if(pos.y > outer.bottom.y) pos.y = outer.top.y;
-        if(pos.z > outer.front.z) pos.z = outer.back.z;
-        if(pos.z < outer.back.z) pos.z = outer.front.z;
-    }
+    // CONSTRAIN
     
-    void avoidBounds(ofxBoundary outer) {
-        ofVec3f left(outer.left.x,pos.y,pos.z);
-        ofVec3f right(outer.right.x,pos.y,pos.z);
-        ofVec3f top(pos.x,outer.top.y,pos.z);
-        ofVec3f bottom(pos.x,outer.bottom.y,pos.z);
-        ofVec3f front(pos.x,pos.y,outer.front.z);
-        ofVec3f back(pos.x,pos.y,outer.back.z);
-        
-        ofVec3f avLeft(avoid(left,true));
-        ofVec3f avRight(avoid(right,true));
-        ofVec3f avTop(avoid(top,true));
-        ofVec3f avBottom(avoid(bottom,true));
-        ofVec3f avFront(avoid(front,true));
-        ofVec3f avBack(avoid(back,true));
-        
-        
-        
-        
-        acc += avLeft;
-        acc += avRight;
-        acc += avTop;
-        acc += avBottom;
-        acc += avFront;
-        acc += avBack;
+    float calcDistToCentre() {
+        distToCent.set(pos);
+        distToCent -= circleLocation;
+        distToCentre = distToCent.length();
+        return distToCentre;
     }
     
     bool checkIfWithinTorus() {
@@ -412,8 +457,8 @@ public:
             acc += steer;
         }        
     }
-
     
+    // FLOCKING
     ofVec3f steer(ofVec3f target,bool arrival) {
         ofVec3f steer;
         if(!arrival){
@@ -472,27 +517,7 @@ public:
         sep *= separationF;
         acc += sep;
     }
-    
-    ofVec3f attract(vector <ofxParticle> particles) {
-        ofVec3f posSum;
-        ofVec3f attract;
-        for(int i=0;i<particles.size();i++) {
-            if (particles[i].ID != ID && particles[i].isDead != true) {
-                other.set(particles[i].pos);
-                dist.set(pos);
-                dist -= other;
-                float d = dist.length();
-                if(type == particles[i].type && d > 0 && d <= pPerception) {
-                    attract.set(dist);
-                    attract.normalize();
-                    attract /= d;
-                    posSum -= attract;
-                }
-            }
-        }
-        return posSum;
-    }
-    ofVec3f align(vector <ofxParticle> particles) {
+    void align(vector <ofxParticle> particles) {
         ofVec3f velSum;
         int count = 0;
         for(int i=0;i<particles.size();i++){
@@ -512,9 +537,11 @@ public:
             velSum /= (float)count;
             velSum.limit(pForce);
         }
-        return velSum;
+        ali.set(velSum);
+        ali *= alignF;
+        acc += ali;
     }
-    ofVec3f cohere(vector <ofxParticle> particles) {
+    void cohere(vector <ofxParticle> particles) {
         ofVec3f posSum;
         ofVec3f steer;
         posSum.set(origin);
@@ -539,19 +566,11 @@ public:
         steer.set(pos);
         steer -= posSum;
         steer.limit(pForce);
-        return steer;
+        coh.set(steer);
+        coh *= cohesionF;
+        acc += coh;
     }
-    void killStrays(ofxBoundary outer) {
-        if (pos.x > outer.right.x || pos.x < outer.left.x) {
-            isDead = true;
-        }
-        if (pos.y > outer.bottom.y || pos.y < outer.top.y) {
-            isDead = true;
-        }
-        if (pos.z > outer.front.z || pos.z < outer.back.z) {
-            isDead = true;
-        }
-    }
+
 
     
 };

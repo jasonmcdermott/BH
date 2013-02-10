@@ -21,7 +21,7 @@ public:
     }
     
     void update() {
-        radius = mass;
+
     }
     
     void addMass(float m) {
@@ -29,11 +29,12 @@ public:
     }
     
     void render() {
+        radius = mass;
         ofSetColor(255);
         ofSphere(pos,radius);
     }
     
-    void renderVA() {
+    void renderVertexArray() {
         ofSetColor(color);
         ofSphere(pos.x,pos.y,pos.z,radius/10);
     }

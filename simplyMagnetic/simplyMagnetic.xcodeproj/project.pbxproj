@@ -359,8 +359,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				0E2F3C8316B797A500C73B23 /* ofxBody.h */,
 				0EFB1D0216B4D68600FC10BA /* ofxBoundary.h */,
+				0E2F3C8316B797A500C73B23 /* ofxBody.h */,
 				0EFB1D0016B4D43800FC10BA /* ofxParticleSystem.h */,
 				0EFB1D0116B4D43E00FC10BA /* ofxParticle.h */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
