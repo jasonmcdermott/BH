@@ -23,7 +23,7 @@ class testApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-        void snapFrame(string mode);
+        void snapFrame(bool snap);
     
     void setupGUI();
     void updateGUI();
@@ -43,6 +43,7 @@ class testApp : public ofBaseApp{
     ofCamera cam;
     ofVec3f camPos;
     bool camDraw;
+    bool snappy;
     
 
 //    bool	reset, avoidWalls, interactWithBodies, drawBodies, drawFlock, drawPreds;

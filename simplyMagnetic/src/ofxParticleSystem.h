@@ -8,6 +8,9 @@
 #define REPEL 1
 #define NUM_BILLBOARDS 5000
 
+#define MAX_PARTICLES		500
+#define MAX_TRAIL_LENGTH	70
+
 
 class ofxParticleSystem {
 public:
@@ -26,12 +29,12 @@ public:
     bool renderVA = false, flock, drawBounds, avoidBoundaries, gravitate;
     ofVec3f circleLocation;
     float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, G;
-    float bodyMass, orbitF;
+    float bodyMass, orbitF, maxOrbitForce, ribbonWidth;
 
     int blendMode = -1, renderMode = 0;
     bool blending, depth;
 
-    // Bright Hearts Gradients
+    // BRIGHT HEARTS GRADIENTS
     int BHGShapeType, BHGNumSides;
     float BHGBlur, BHGThickness, BHGDiameter;
     
@@ -52,6 +55,23 @@ public:
     ofImage billboardTexture;
     ofVboMesh billboards;
     ofVec3f billboardVels[NUM_BILLBOARDS];
+    
+    
+    // VBO RIBBONS
+    int pTotal		= MAX_PARTICLES;
+	int trailIndex	= 0;
+    int		posSpread;
+    int		velSpread;
+    GLuint	vboRibbon[ MAX_PARTICLES * 2 ];
+    float	posRibbon[ MAX_PARTICLES ][ 3 ];
+    float	velRibbon[ MAX_PARTICLES ][ 3 ];
+    float	colRibbon[ MAX_PARTICLES ][ 4 ];
+    float	trlRibbon[ MAX_PARTICLES ][ 3 * MAX_TRAIL_LENGTH ];		// trail position.
+    float	tvrRibbon[ MAX_PARTICLES ][ 3 * MAX_TRAIL_LENGTH * 2 ];	// trail vertexes.
+    float	tclRibbon[ MAX_PARTICLES ][ 4 * MAX_TRAIL_LENGTH * 2 ];	// trail colour.
+    ofVec3f	upAxis;
+    float		upAxisRot;
+    float		rotateY;
     
     ofxParticleSystem() {
         worldSize = 800;
@@ -78,7 +98,10 @@ public:
         if(shader.load("shader")) {
             printf("Shader is loaded\n");
         }
+        
+        initVBO();
     }
+
     
     void update() {
         for(int i=0;i<particles.size();i++) {
@@ -93,18 +116,104 @@ public:
         if (torusOuterRadius < torusInnerRadius) {
             torusInnerRadius = torusOuterRadius - 5;
         }
+        
+        if (renderMode == 9) {
+            for( int i=0; i<particles.size(); i++ ) {
+                
+                int j = 0;
+                if( trailIndex < MAX_TRAIL_LENGTH ) {
+                    j = trailIndex;
+                } else {
+                    j = MAX_TRAIL_LENGTH - 1;
+                }
+                
+                //      Iterator
+                // TRAIL POSITIONS.
+                if( trailIndex > 0 ) memmove( trlRibbon[ i ] + 3, trlRibbon[ i ], 3 * j * sizeof(float) );
+                
+                trlRibbon[ i ][ 0 ] = particles[i].pos.x;
+                trlRibbon[ i ][ 1 ] = particles[i].pos.y;
+                trlRibbon[ i ][ 2 ] = particles[i].pos.z;
+                
+                // TRAIL VERTEX.
+                if( trailIndex > 0 ) memmove( tvrRibbon[ i ] + 6, tvrRibbon[ i ], 6 * j * sizeof(float) );
+                
+                if( trailIndex == 0 ) {
+                    tvrRibbon[ i ][ 0 ] = particles[i].pos.x;
+                    tvrRibbon[ i ][ 1 ] = particles[i].pos.y;
+                    tvrRibbon[ i ][ 2 ] = particles[i].pos.z;
+                    tvrRibbon[ i ][ 3 ] = particles[i].pos.x;
+                    tvrRibbon[ i ][ 4 ] = particles[i].pos.y;
+                    tvrRibbon[ i ][ 5 ] = particles[i].pos.z;
+                    
+                } else {
+                    int m = 0;
+                    int n = 1;
+                    
+                    float t0x = trlRibbon[ i ][ m * 3 + 0 ];	// xyz position of 1st trail point.
+                    float t0y = trlRibbon[ i ][ m * 3 + 1 ];
+                    float t0z = trlRibbon[ i ][ m * 3 + 2 ];
+                    
+                    float t1x = trlRibbon[ i ][ n * 3 + 0 ];	// xyz position of 2nd trail point.
+                    float t1y = trlRibbon[ i ][ n * 3 + 1 ];
+                    float t1z = trlRibbon[ i ][ n * 3 + 2 ];
+                    
+                    ofVec3f t0 = ofVec3f( t0x, t0y, t0z );	// position vector of 1st trail point.
+                    ofVec3f t1 = ofVec3f( t1x, t1y, t1z );	// position vector of 2nd trail point.
+                    
+                    ofVec3f v1 = t0 - t1;
+                    v1.normalize();
+                    ofVec3f ya = ofVec3f( upAxis );
+                    ofVec3f v2 = ya.cross( v1 );
+                    ofVec3f v3 = v1.cross( v2 ).normalize();
+                    
+                    float w		= particles[i].ribbonWidth;
+                    float xOff	= v3.x * w;
+                    float yOff	= v3.y * w;
+                    float zOff	= v3.z * w;
+                    
+                    tvrRibbon[ i ][ 0 ] = t0x - xOff;
+                    tvrRibbon[ i ][ 1 ] = t0y - yOff;
+                    tvrRibbon[ i ][ 2 ] = t0z - zOff;
+                    tvrRibbon[ i ][ 3 ] = t0x + xOff;
+                    tvrRibbon[ i ][ 4 ] = t0y + yOff;
+                    tvrRibbon[ i ][ 5 ] = t0z + zOff;
+                }
+                
+                // TRAIL COLOUR.
+                float r, g, b, a;
+                
+                r = color.r;
+                g = color.g;
+                b = color.b;
+                a = color.a;
+                
+                //      Iterator
+                if( trailIndex > 0 ) {
+                    memmove( tclRibbon[ i ] + 4 * 2, tclRibbon[ i ], 4 * 2 * j * sizeof(float) );
+                }
+                
+                tclRibbon[ i ][ 0 ] = tclRibbon[ i ][ 4 ] = r;
+                tclRibbon[ i ][ 1 ] = tclRibbon[ i ][ 5 ] = g;
+                tclRibbon[ i ][ 2 ] = tclRibbon[ i ][ 6 ] = b;
+                tclRibbon[ i ][ 3 ] = tclRibbon[ i ][ 7 ] = a;
+            }
+            
+            if( trailIndex < MAX_TRAIL_LENGTH ) {
+                ++trailIndex;
+            }
+        }  // updating ribbons :)
     }
         
     void render() {
         ofBackground(bgColor);
         if (blending) {
             ofEnableAlphaBlending();
-            if (blendMode == 0) ofEnableBlendMode(OF_BLENDMODE_ADD);
-            if (blendMode == 1) ofEnableBlendMode(OF_BLENDMODE_SCREEN);
-            if (blendMode == 2) ofEnableBlendMode(OF_BLENDMODE_MULTIPLY);
-            if (blendMode == 3) ofEnableBlendMode(OF_BLENDMODE_ALPHA);
-            if (blendMode == 4) ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
-
+//            if (blendMode == 0) ofEnableBlendMode(OF_BLENDMODE_ADD);
+//            if (blendMode == 1) ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+//            if (blendMode == 2) ofEnableBlendMode(OF_BLENDMODE_MULTIPLY);
+//            if (blendMode == 3) ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+//            if (blendMode == 4) ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
         } else {
             ofDisableAlphaBlending();
         }
@@ -113,7 +222,6 @@ public:
         } else {
             glDisable(GL_DEPTH_TEST);
         }
-        
         
         // "VBO", "Spheres", "Points", "VertexArray", "Trails", "Boxes"};
         if (renderMode == 0) {
@@ -255,15 +363,43 @@ public:
             }
         } // Debug Rendering
         
+        if (renderMode == 8) {
+            for(int i=0;i<particles.size();i++) {
+                particles[i].renderTrails();
+            }
+        } // Render Trails :)
+        
+        if (renderMode == 9) {
+            
+            for( int i=0; i<MAX_PARTICLES; i++ ) {
+                glEnableClientState( GL_VERTEX_ARRAY );
+                glEnableClientState( GL_COLOR_ARRAY );
+                
+                glBindBufferARB( GL_ARRAY_BUFFER_ARB, vboRibbon[ i * 2 + 0 ] );
+                glBufferSubDataARB( GL_ARRAY_BUFFER_ARB, 0, sizeof( tvrRibbon[ i ] ), tvrRibbon[ i ] );
+                glVertexPointer( 3, GL_FLOAT, 0, 0 );
+                
+                glBindBufferARB( GL_ARRAY_BUFFER_ARB, vboRibbon[ i * 2 + 1 ] );
+                glBufferSubDataARB( GL_ARRAY_BUFFER_ARB, 0, sizeof( tclRibbon[ i ] ), tclRibbon[ i ] );
+                glColorPointer( 4, GL_FLOAT, 0, 0 );
+                
+                glDrawArrays( GL_QUAD_STRIP, 0, MAX_TRAIL_LENGTH );
+                
+                glDisableClientState( GL_VERTEX_ARRAY );
+                glDisableClientState( GL_COLOR_ARRAY );
+                
+                glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
+            }
+        } // Render Ribbons :)
+        
         if (drawBodies) {
             for (int i=0;i<bodies.size();i++) {
                 bodies[i].render();
             }
         }
-
         
-        if (blending) ofEnableAlphaBlending();
-        if (blendMode == 0 || blendMode == 1 || blendMode == 2 || blendMode == 3) ofDisableBlendMode();
+        if (blending) ofDisableAlphaBlending();
+//        if (blendMode == 0 || blendMode == 1 || blendMode == 2 || blendMode == 3) ofDisableBlendMode();
         
         if (drawBounds) {
             ofFill();
@@ -339,10 +475,27 @@ public:
             particles[i].BHGNumSides = BHGNumSides;
             particles[i].BHGThickness = BHGThickness;
             particles[i].BHGDiameter = BHGDiameter;
+            particles[i].maxOrbitForce = maxOrbitForce;
+            particles[i].ribbonWidth = ribbonWidth;
         }
         for (int i=0;i<bodies.size();i++) {
             bodies[i].mass = bodyMass;
         }
     }
     
+    void initVBO() {
+        upAxis.set(0, 1, 0);
+        upAxisRot = 5;
+        
+        glGenBuffersARB( MAX_PARTICLES * 2, &vboRibbon[ 0 ] );
+        for( int i=0; i<MAX_PARTICLES; i++ ) {
+            glBindBufferARB( GL_ARRAY_BUFFER_ARB, vboRibbon[ i * 2 + 0 ] );
+            glBufferDataARB( GL_ARRAY_BUFFER_ARB, sizeof( tvrRibbon[ i ] ), tvrRibbon[ i ], GL_STREAM_DRAW_ARB );
+            
+            glBindBufferARB( GL_ARRAY_BUFFER_ARB, vboRibbon[ i * 2 + 1 ] );
+            glBufferDataARB( GL_ARRAY_BUFFER_ARB, sizeof( tclRibbon[ i ] ), tclRibbon[ i ], GL_STREAM_DRAW_ARB );
+        }
+    }
+    
 };
+

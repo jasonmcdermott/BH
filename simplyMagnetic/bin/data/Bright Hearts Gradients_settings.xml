@@ -5,14 +5,14 @@
     </ComboBox_shapeType>
     <SliderFloat_Blur>
         <name>Blur</name>
-        <value>2.799999237</value>
+        <value>0.000000000</value>
     </SliderFloat_Blur>
     <SliderInt_Number_of_Sides>
         <name>Number of Sides</name>
-        <value>34</value>
+        <value>3</value>
     </SliderInt_Number_of_Sides>
     <SliderFloat_Thickness>
         <name>Thickness</name>
-        <value>14.500000000</value>
+        <value>0.000000000</value>
     </SliderFloat_Thickness>
 </controls>

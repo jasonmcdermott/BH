@@ -15,9 +15,10 @@ public:
     float torusInnerRadius, torusOuterRadius, innerBoundF, outerBoundF, G;
     ofVec3f cross, a, b, distToCent, crossVec;
     float distToCentre, orbitF, randomX, randomY;
-    float blur, diameter, thickness, Alpha, numSides, middleRadius;
+    float blur, diameter, thickness, Alpha, numSides, middleRadius, maxOrbitForce, ribbonWidth;
     int shapeType;
     GLfloat cols[3];
+
     
     // BAKER SPHERICAL COMPONENTS
     float degreeIncrement         = 20;      // 10 degrees between
@@ -26,9 +27,15 @@ public:
     
     ofTexture texture;
     
-    // Bright Hearts Gradients!
+    // BRIGHT HEARTS GRADIENTS
     int BHGShapeType, BHGNumSides;
     float BHGBlur, BHGThickness, BHGDiameter;
+    
+    // VBO RIBBONS
+
+    
+    // CAMERA MESH
+    vector<ofVec3f> meshPoints;
     
     ofxParticle() {}
     
@@ -65,8 +72,9 @@ public:
         age = 0;
         diameter = sc * 2;
         blur = 3;
+        meshPoints.clear();
     }
-    
+        
     void run(vector <ofxParticle> particles, ofxBoundary outer, vector <ofxBody> bodies) {
         if (reset == true) {
             initParticle();
@@ -133,6 +141,7 @@ public:
 //        cross *=;
         
 //        cross /= 1000;
+        cross.limit(maxOrbitForce);
         acc -= cross * orbitF;
 
         
@@ -351,6 +360,70 @@ public:
         delete[] ver_coords;
         delete[] ver_cols;
         ofPopMatrix();
+    }
+    
+    void renderTrails() {
+        ofSetColor(color);
+        ofVec3f newPos(pos.x,pos.y,pos.z);
+        meshPoints.push_back(newPos);
+        
+//        ofMesh mesh;
+//        mesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+//        mesh.setMode(GL_QUADS);
+        
+        glBegin(GL_QUADS);
+        
+        for(int i = 1; i < meshPoints.size(); i++){
+            
+            //find this point and the next point
+            ofVec3f thisPoint = meshPoints[i-1];
+            ofVec3f nextPoint = meshPoints[i];
+            
+            //get the direction from one to the next.
+            //the ribbon should fan out from this direction
+            ofVec3f direction = (nextPoint - thisPoint);
+            
+            //get the distance from one point to the next
+            float distance = direction.length();
+            
+            //get the normalized direction. normalized vectors always have a length of one
+            //and are really useful for representing directions as opposed to something with length
+            ofVec3f unitDirection = direction.normalized();
+            
+            //find both directions to the left and to the right
+            ofVec3f toTheLeft = unitDirection.getRotated(-90, ofVec3f(0,0,1));
+            ofVec3f toTheRight = unitDirection.getRotated(90, ofVec3f(0,0,1));
+            
+            //use the map function to determine the distance.
+            //the longer the distance, the narrower the line.
+            //this makes it look a bit like brush strokes
+//            float thickness = ofMap(distance, 0, 60, 20, 2, true);
+            thickness = 1;
+            
+            //calculate the points to the left and to the right
+            //by extending the current point in the direction of left/right by the length
+            ofVec3f leftPoint = thisPoint+toTheLeft*thickness;
+            ofVec3f rightPoint = thisPoint+toTheRight*thickness;
+            
+            
+            //add these points to the triangle strip
+//            mesh.addVertex(ofVec3f(leftPoint.x, leftPoint.y, leftPoint.z));
+//            mesh.addVertex(ofVec3f(rightPoint.x, rightPoint.y, rightPoint.z));
+            glVertex3f(leftPoint.x, leftPoint.y, leftPoint.z);
+            glVertex3f(rightPoint.x, rightPoint.y, rightPoint.z);
+            glVertex3f(nextPoint.x,nextPoint.y,nextPoint.z);
+        }
+        
+        glEnd();
+//        meshPoints[i-1].
+        
+//        for (int i=1;i<meshPoints.size();i++) {
+//            
+//        }
+        
+        //end the shape
+//        mesh.draw();
+
     }
     
     // CONSTRAIN

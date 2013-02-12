@@ -7,16 +7,12 @@ void testApp::setup(){
     ofSetCircleResolution(100);
     
     saveFrame = true;
-    guiDraw = false;
+    guiDraw = true;
     tick = 0.0001;
 	memset(snapString, 0, 255);
 
-    // set the camera distance
 	camDist  = 100;
 	camera.setDistance(camDist);
-
-    
-//    setupCam();
     setupGUI();
 }
 
@@ -27,20 +23,16 @@ void testApp::update(){
         ps.update();
         time = 0;
     }
-//    cam.setPosition(camPos.x, camPos.y, camPos.z);
-//    cam.lookAt(ps.centre);
 }
 
 
 void testApp::draw(){
-//    if (camDraw) cam.begin(); cam.draw();
     
     camera.begin();
     ps.render();
     camera.end();
 
-//    if (camDraw) cam.end();
-    snapFrame("auto");
+    snapFrame(snappy);
     if (guiDraw) gui.draw();
     ofSetColor(255,200);
     ofDrawBitmapString("Hit 'g' to toggle GUI", 20,ofGetHeight()-20);
@@ -48,7 +40,6 @@ void testApp::draw(){
 }
 
 void testApp::updateGUI() {}
-
 
 void testApp::setupGUI() {
     gui.addTitle("Personality");
@@ -59,9 +50,13 @@ void testApp::setupGUI() {
     gui.addSlider("PersonalSpace", ps.personalSpace, 1, 400);
     gui.addSlider("Force", ps.pForce, 0.1, 10);
     gui.addSlider("Speed", ps.pSpeed, 0.1, 60);
+    gui.addSlider("maxOrbitForce",ps.maxOrbitForce,0.01,1);
     gui.addSlider("Drag", ps.dragF, 0.1, 1);
     gui.addColorPicker("Color", ps.color);
     gui.addSlider("orbitForce",ps.orbitF,0.001,0.9);
+    gui.addSlider("RibbonWidth", ps.ribbonWidth, 0.1,4).setSmoothing(0.4);
+//    gui.addSlider("RibbonLength", ps.ribbonLength, 0.1,6);
+
     
     gui.addTitle("Behaviour").setNewColumn(true);
     gui.addToggle("Orbit", ps.orbit);
@@ -96,8 +91,8 @@ void testApp::setupGUI() {
     gui.addToggle("Depth", ps.depth);
     string blendArray[] = {"Additive", "Screen", "Multiply", "Alpha", "Subtract"};
     gui.addComboBox("BlendMode", ps.blendMode, 5, blendArray);
-    string renderArray[] = {"VBO", "Spheres", "Points", "VertexArray", "Gradients!", "Trails", "VBO Billboarding", "debug"};
-    gui.addComboBox("RenderMode", ps.renderMode, 8, renderArray);
+    string renderArray[] = {"VBO", "Spheres", "Points", "VertexArray", "Gradients!", "Trails", "VBO Billboarding", "debug", "trails", "ribbons"};
+    gui.addComboBox("RenderMode", ps.renderMode, 10, renderArray);
 
     gui.addPage("Bright Hearts Gradients");
     gui.addTitle("rings");
@@ -111,57 +106,43 @@ void testApp::setupGUI() {
 	gui.show();
 }
 
-void testApp::setupCam() {
-    cam.resetTransform();
-    cam.setFov(60);
-    cam.clearParent();
-    camDraw = true;
-    camPos.set(ofGetWidth()/2, ofGetHeight()/2, WORLDSIZE*2);
-}
-
 void testApp::keyPressed(int key){
     if (key == 'g') {
         guiDraw = !guiDraw;
     }
     if (key == 's') {
-        snapFrame("key");
+        snappy = true;
+    }
+    if (key == '[') {
+        gui.prevPage();
+    }
+    if (key == ']') {
+        gui.nextPage();
     }
     
-    if(key>='0' && key<='9') {
-		gui.setPage(key - '0');
-		gui.show();
-	} else {
-		switch(key) {
-			case ' ': gui.toggleDraw(); break;
-			case '[': gui.prevPage(); break;
-			case ']': gui.nextPage(); break;
-			case 'p': gui.nextPageWithBlank(); break;
-		}
-	}
-
     if(key == OF_KEY_UP) {
 		camDist -= 10;
 	}
 	if(key == OF_KEY_DOWN) {
 		camDist += 10;
 	}
-	camera.setDistance(camDist);
 }
 
-void testApp::snapFrame(string mode) {
+void testApp::snapFrame(bool snap) {
     
-    if (mode == "key") {
+    if (snap == true) {
         img.grabScreen(0,0,ofGetWidth(),ofGetHeight());
 		string fileName = "../../../../../images/particles_"+ofGetTimestampString()+".png";
 		img.saveImage(fileName);
     }
-    else if (mode == "auto") {
+    else if (snap == false) {
         if (ofGetFrameNum() % 900 == 0 && saveFrame == true){
             img.grabScreen(0,0,ofGetWidth(),ofGetHeight());
             string fileName = "../../../../../images/particles_"+ofGetTimestampString()+".png";
             img.saveImage(fileName);
         }
     }
+    snappy = false;
 }
 
 void testApp::keyReleased(int key){}
