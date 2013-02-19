@@ -26,11 +26,9 @@ class testApp : public ofBaseApp{
         void snapFrame(bool snap);
     
     void setupGUI();
-    void updateGUI();
     void setupCam();
     
     ofEasyCam camera;
-    float camDist;
     
     ofImage img;
     int snapCounter;

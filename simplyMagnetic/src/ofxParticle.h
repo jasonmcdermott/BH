@@ -19,20 +19,15 @@ public:
     int shapeType;
     GLfloat cols[3];
 
-    
     // BAKER SPHERICAL COMPONENTS
     float degreeIncrement         = 20;      // 10 degrees between
     int   sphereVertexCount      = (180 / degreeIncrement) * (360 / degreeIncrement) * 4;
     float M_PI_Divided_By_180;
-    
     ofTexture texture;
     
     // BRIGHT HEARTS GRADIENTS
     int BHGShapeType, BHGNumSides;
     float BHGBlur, BHGThickness, BHGDiameter;
-    
-    // VBO RIBBONS
-
     
     // CAMERA MESH
     vector<ofVec3f> meshPoints;
@@ -45,7 +40,7 @@ public:
         ID = ID_;
         type = type_;
         initParticle();
-        sc = mass;
+        sc = 100;
         Alpha = 255;
         numSides = 100;
         shapeType = 0;
@@ -73,13 +68,13 @@ public:
         diameter = sc * 2;
         blur = 3;
         meshPoints.clear();
+        reset = false;
     }
         
-    void run(vector <ofxParticle> particles, ofxBoundary outer, vector <ofxBody> bodies) {
+    void run(vector <ofxParticle> particles, vector <ofxBody> bodies) {
         if (reset == true) {
             initParticle();
         }
-        
         if (isDead != true) {
             age ++;
             if (orbit) crossProd(bodies);
@@ -88,8 +83,9 @@ public:
             if (alignF > 0) align(particles);
             if (cohesionF > 0) cohere(particles);
             if (avoidBoundaries) moveInward(); moveOutward();
-            
             move();
+        } else {
+//            reset = true;
         }
     }
 
@@ -100,15 +96,18 @@ public:
                 ofVec3f bodyForce(bodies[i].pos);
                 bodyForce -= pos;
                 float dist = bodyForce.length();
+                
                 float inverseSquare = G * ((mass * bodies[i].mass) / (dist * dist));
-                if (dist > bodies[i].mass + mass) {
+                
+//                float inverseSquare = ((mass * bodies[i].mass) / (dist * dist));
+
+                if (dist < bodies[i].mass) {
+                    isDead == true;
+//                    dragF = 0.95;
+//                    acc -= bodyForce / 50;
+                } else {
                     bodyForce *= inverseSquare;
                     acc += bodyForce;
-//                    dragF = 1;
-                }
-                else {
-                    dragF = 0.95;
-                    acc -= bodyForce / 50;
                 }
             }
             if (bodies[i].charge > 0) {
@@ -196,21 +195,7 @@ public:
     
     // RENDER
     void render() {}
-    
-    void renderSphere() {
-        if (isDead != true) {
-            ofSetColor(color);
-            ofSphere(pos.x,pos.y,pos.z,sc);
-        }
-    }
-    
-    void renderPoints() {
-        if (isDead != true) {
-            ofSetColor(color);
-            glVertex3f(pos.x,pos.y,pos.z);
-        }
-    }
-    
+            
     void renderVALaMarche() {
 //        // enable vertex and normal data
 //        glEnableClientState(GL_VERTEX_ARRAY);
@@ -294,6 +279,13 @@ public:
             ofSphere(cross,1);
             ofLine(pos,cross);
 //            ofDrawBitmapString(ofToString(cross,2),cross.x,cross.y,cross.z);
+        }
+    }
+    
+    void renderSphere() {
+        if (isDead != true) {
+            ofSetColor(color);
+            ofSphere(pos.x,pos.y,pos.z,mass);
         }
     }
     
