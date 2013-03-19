@@ -7,7 +7,7 @@ class ofxParticle {
 public:
     
     ofVec3f pos, vel, acc, ali, coh, sep, att, origin, bias, outerTemp, other, dist, circleLocation;
-    float pSpeed = 3, pForce = .5, h, sc = 3, t = 0, c, attractF = 1, separationF = 1, alignF = 1, cohesionF = 1, dragF = 0.95, mass = 1, personalSpace = 15, pPerception = 50;
+    float pSpeed = 3, pForce = .5, h, sc = 100, t = 0, c, attractF = 1, separationF = 1, alignF = 1, cohesionF = 1, dragF = 0.95, mass = 1, personalSpace = 15, pPerception = 50;
     string string;
     bool reset = false, isDead = false, interactWithBodies = true, renderVA = true, avoidBoundaries = true, outside, inside, orbit, gravitate;
     int age = 0, type, prey, trailCount = 0, ID;
@@ -18,21 +18,17 @@ public:
     float blur, diameter, thickness, Alpha, numSides, middleRadius, maxOrbitForce, ribbonWidth;
     int shapeType;
     GLfloat cols[3];
+    ofVec3f scale;
 
-    
     // BAKER SPHERICAL COMPONENTS
     float degreeIncrement         = 20;      // 10 degrees between
     int   sphereVertexCount      = (180 / degreeIncrement) * (360 / degreeIncrement) * 4;
     float M_PI_Divided_By_180;
-    
     ofTexture texture;
     
     // BRIGHT HEARTS GRADIENTS
     int BHGShapeType, BHGNumSides;
     float BHGBlur, BHGThickness, BHGDiameter;
-    
-    // VBO RIBBONS
-
     
     // CAMERA MESH
     vector<ofVec3f> meshPoints;
@@ -45,7 +41,6 @@ public:
         ID = ID_;
         type = type_;
         initParticle();
-        sc = mass;
         Alpha = 255;
         numSides = 100;
         shapeType = 0;
@@ -54,6 +49,7 @@ public:
         cols[0] = 200;
         cols[1] = 255;
         cols[2] = 255;
+        scale.set(mass,mass,mass);
     }
 
     void initParticle() {
@@ -200,21 +196,7 @@ public:
     
     // RENDER
     void render() {}
-    
-    void renderSphere() {
-        if (isDead != true) {
-            ofSetColor(color);
-            ofSphere(pos.x,pos.y,pos.z,sc);
-        }
-    }
-    
-    void renderPoints() {
-        if (isDead != true) {
-            ofSetColor(color);
-            glVertex3f(pos.x,pos.y,pos.z);
-        }
-    }
-    
+            
     void renderVALaMarche() {
 //        // enable vertex and normal data
 //        glEnableClientState(GL_VERTEX_ARRAY);
@@ -298,6 +280,13 @@ public:
             ofSphere(cross,1);
             ofLine(pos,cross);
 //            ofDrawBitmapString(ofToString(cross,2),cross.x,cross.y,cross.z);
+        }
+    }
+    
+    void renderSphere() {
+        if (isDead != true) {
+            ofSetColor(color);
+            ofSphere(pos.x,pos.y,pos.z,mass);
         }
     }
     

@@ -1,58 +1,58 @@
 <controls>
     <SliderFloat_Separation>
         <name>Separation</name>
-        <value>0.299999982</value>
+        <value>13.800000191</value>
     </SliderFloat_Separation>
     <SliderFloat_Cohesion>
         <name>Cohesion</name>
-        <value>0.000000000</value>
+        <value>1.125000000</value>
     </SliderFloat_Cohesion>
     <SliderFloat_Alignment>
         <name>Alignment</name>
-        <value>0.000000000</value>
+        <value>1.125000000</value>
     </SliderFloat_Alignment>
     <SliderFloat_Perception>
         <name>Perception</name>
-        <value>55.889999390</value>
+        <value>110.779998779</value>
     </SliderFloat_Perception>
     <SliderFloat_PersonalSpace>
         <name>PersonalSpace</name>
-        <value>8.979999542</value>
+        <value>92.770004272</value>
     </SliderFloat_PersonalSpace>
     <SliderFloat_Force>
         <name>Force</name>
-        <value>0.100000001</value>
+        <value>1.634500027</value>
     </SliderFloat_Force>
     <SliderFloat_Speed>
         <name>Speed</name>
-        <value>10.582500458</value>
+        <value>9.384500504</value>
     </SliderFloat_Speed>
     <SliderFloat_Mass>
         <name>Mass</name>
-        <value>1.000000000</value>
+        <value>84.655006409</value>
     </SliderFloat_Mass>
     <SliderFloat_maxOrbitForce>
         <name>maxOrbitForce</name>
-        <value>1.000000000</value>
+        <value>0.010000000</value>
     </SliderFloat_maxOrbitForce>
     <SliderFloat_orbitForce>
         <name>orbitForce</name>
-        <value>0.765150011</value>
+        <value>0.001000000</value>
     </SliderFloat_orbitForce>
     <ColorPicker_Color>
         <name>Color</name>
-        <values_0>0.055000000</values_0>
-        <values_1>0.795000017</values_1>
-        <values_2>0.995000005</values_2>
-        <values_3>0.995000005</values_3>
+        <values_0>0.300000012</values_0>
+        <values_1>0.405000001</values_1>
+        <values_2>0.504999995</values_2>
+        <values_3>0.970000029</values_3>
     </ColorPicker_Color>
     <SliderFloat_Ribbon_Opacity>
         <name>Ribbon Opacity</name>
-        <value>0.779999971</value>
+        <value>0.000000000</value>
     </SliderFloat_Ribbon_Opacity>
     <SliderFloat_RibbonWidth>
         <name>RibbonWidth</name>
-        <value>0.256000012</value>
+        <value>0.100000001</value>
     </SliderFloat_RibbonWidth>
     <Toggle_Orbit>
         <name>Orbit</name>
@@ -64,7 +64,7 @@
     </Toggle_Avoid_Boundaries>
     <Toggle_Gravitate>
         <name>Gravitate</name>
-        <value>1</value>
+        <value>0</value>
     </Toggle_Gravitate>
     <Toggle_Reset>
         <name>Reset</name>
@@ -80,10 +80,10 @@
     </Toggle_Draw_Bodies>
     <ColorPicker_backgroundColor>
         <name>backgroundColor</name>
-        <values_0>0.020000000</values_0>
-        <values_1>0.010000000</values_1>
+        <values_0>0.035000000</values_0>
+        <values_1>0.035000000</values_1>
         <values_2>0.025000000</values_2>
-        <values_3>0.774999976</values_3>
+        <values_3>0.005000000</values_3>
     </ColorPicker_backgroundColor>
     <SliderFloat_TimeSpeed>
         <name>TimeSpeed</name>
@@ -91,26 +91,14 @@
     </SliderFloat_TimeSpeed>
     <SliderFloat_Gravity>
         <name>Gravity</name>
-        <value>0.234549999</value>
+        <value>0.484049976</value>
     </SliderFloat_Gravity>
     <SliderFloat_Drag>
         <name>Drag</name>
-        <value>0.229050010</value>
+        <value>0.322499990</value>
     </SliderFloat_Drag>
     <SliderFloat_bodyMass>
         <name>bodyMass</name>
-        <value>5.455000401</value>
+        <value>10.404999733</value>
     </SliderFloat_bodyMass>
-    <Toggle_Blending>
-        <name>Blending</name>
-        <value>1</value>
-    </Toggle_Blending>
-    <Toggle_Depth>
-        <name>Depth</name>
-        <value>1</value>
-    </Toggle_Depth>
-    <ComboBox_RenderMode>
-        <name>RenderMode</name>
-        <value>0</value>
-    </ComboBox_RenderMode>
 </controls>

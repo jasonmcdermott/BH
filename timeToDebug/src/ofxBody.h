@@ -10,7 +10,7 @@ public:
     ofVec3f pos;
     float mass, radius;
     int charge;
-    ofFloatColor	color;
+    ofFloatColor color;
     GLfloat cols[3];
     
     // BRIGHT HEARTS GRADIENTS
@@ -28,38 +28,28 @@ public:
         BHGThickness = 10;
         BHGDiameter = mass;
         BHGBlur = 1;
+        BHGShapeType = 0;
     }
     
-    void update() {
-
-    }
+    void update() {}
     
-    void addMass(float m) {
-        mass = mass + m;
-    }
+    void addMass(float m) { mass = mass + m; }
     
-    void render() {
-        radius = mass;
-        ofSetColor(255);
-        ofSphere(pos,mass);
-    }
+    void render() { radius = mass; ofSetColor(255); ofSphere(pos,mass); }
     
-    void renderVertexArray() {
-        ofSetColor(color);
-        ofSphere(pos.x,pos.y,pos.z,mass);
-    }
+    void renderVertexArray() { ofSetColor(color); ofSphere(pos.x,pos.y,pos.z,mass); }
     
     void renderBHGradients() {
         if (BHGShapeType == 0) {
-            drawGradient(mass-BHGBlur,0,color.a,0,BHGNumSides);
-            drawGradient(mass,mass-BHGBlur,0,0,BHGNumSides);
+            drawGradient(mass - BHGBlur, 0, color.a, 0, BHGNumSides);
+            drawGradient(mass, mass - BHGBlur, 0, 0, BHGNumSides);
         } else if (BHGShapeType == 1) {
-            drawGradient(mass+BHGThickness-BHGBlur,mass-BHGThickness+BHGBlur,color.a,0,BHGNumSides);
-            drawGradient(mass+BHGThickness,mass+BHGThickness-BHGBlur,0,0,BHGNumSides);
-            drawGradient(mass-BHGThickness,mass-BHGThickness+BHGBlur,0,0,BHGNumSides);
+            drawGradient(mass + BHGThickness - BHGBlur, mass - BHGThickness + BHGBlur, color.a, 0, BHGNumSides);
+            drawGradient(mass + BHGThickness, mass + BHGThickness - BHGBlur, 0, 0, BHGNumSides);
+            drawGradient(mass - BHGThickness, mass - BHGThickness + BHGBlur, 0, 0, BHGNumSides);
         } else if (BHGShapeType == 2) {
-            drawGradient(mass-BHGThickness,mass+BHGThickness,0,0,BHGNumSides);
-            drawGradient(mass+BHGThickness+BHGThickness*0.05, mass+BHGThickness, 0, 0, BHGNumSides);
+            drawGradient(mass - BHGThickness, mass + BHGThickness, 0, 0, BHGNumSides);
+            drawGradient(mass + BHGThickness + BHGThickness * 0.05, mass + BHGThickness, 0, 0, BHGNumSides);
         }
     }
     
@@ -68,8 +58,8 @@ public:
         ofPushMatrix();
         ofTranslate(pos.x,pos.y,pos.z);
         
-        GLfloat* ver_coords = new GLfloat[ (ns_+1) * 4];
-        GLfloat* ver_cols = new GLfloat[ (ns_+1) * 8];
+        GLfloat* body_ver_coords = new GLfloat[ (ns_+1) * 4];
+        GLfloat* body_ver_cols = new GLfloat[ (ns_+1) * 8];
         
         float angle;
         float angleSize =  2*PI/ns_;
@@ -88,32 +78,29 @@ public:
         
         for (int i=0; i< (1+ns_); i++) {
             angle = i* angleSize;
-            ver_coords[i*4+0] = (opaque_*cos(angle));
-            ver_coords[i*4+1] = (opaque_*sin(angle));
-            ver_cols[i*8+0] = color.r;
-            ver_cols[i*8+1] = color.g;
-            ver_cols[i*8+2] = color.b;
-            ver_cols[i*8+3] = opac_;
-            ver_coords[i*4+2] = (transp_*cos(angle));
-            ver_coords[i*4+3] = (transp_*sin(angle));
-            ver_cols[i*8+4] = color.r;
-            ver_cols[i*8+5] = color.g;
-            ver_cols[i*8+6] = color.b;
-            ver_cols[i*8+7] = color.a;
+            body_ver_coords[i*4+0] = (opaque_*cos(angle));
+            body_ver_coords[i*4+1] = (opaque_*sin(angle));
+            body_ver_cols[i*8+0] = color.r;
+            body_ver_cols[i*8+1] = color.g;
+            body_ver_cols[i*8+2] = color.b;
+            body_ver_cols[i*8+3] = opac_;
+            body_ver_coords[i*4+2] = (transp_*cos(angle));
+            body_ver_coords[i*4+3] = (transp_*sin(angle));
+            body_ver_cols[i*8+4] = color.r;
+            body_ver_cols[i*8+5] = color.g;
+            body_ver_cols[i*8+6] = color.b;
+            body_ver_cols[i*8+7] = color.a;
         }
         
         
-        glVertexPointer( 2, GL_FLOAT, 0, ver_coords);
-        glColorPointer(4, GL_FLOAT, 0, ver_cols);
+        glVertexPointer( 2, GL_FLOAT, 0, body_ver_coords);
+        glColorPointer(4, GL_FLOAT, 0, body_ver_cols);
         glDrawArrays( GL_TRIANGLE_STRIP, 0, ( ns_ + 1 ) * 2 );
         
-        delete[] ver_coords;
-        delete[] ver_cols;
+        delete[] body_ver_coords;
+        delete[] body_ver_cols;
         ofPopMatrix();
     }
-
-    
-    
     
     void renderPoints() {
         glEnable(GL_POINT_SIZE);

@@ -1,0 +1,18 @@
+<controls>
+    <SliderFloat_outerBounds>
+        <name>outerBounds</name>
+        <value>7.000000000</value>
+    </SliderFloat_outerBounds>
+    <SliderFloat_outerBoundForce>
+        <name>outerBoundForce</name>
+        <value>0.100000001</value>
+    </SliderFloat_outerBoundForce>
+    <SliderFloat_innerBounds>
+        <name>innerBounds</name>
+        <value>5.000000000</value>
+    </SliderFloat_innerBounds>
+    <SliderFloat_innerBoundForce>
+        <name>innerBoundForce</name>
+        <value>0.100000001</value>
+    </SliderFloat_innerBoundForce>
+</controls>

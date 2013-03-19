@@ -28,7 +28,7 @@ void testApp::update(){
 void testApp::draw(){
     
     camera.begin();
-        ps.render();
+    ps.render();
     camera.end();
 
     snapFrame(snappy);
@@ -37,6 +37,8 @@ void testApp::draw(){
     ofDrawBitmapString("Hit 'g' to toggle GUI", 20,ofGetHeight()-20);
 
 }
+
+void testApp::updateGUI() {}
 
 void testApp::setupGUI() {
     gui.addTitle("Personality");
@@ -47,22 +49,21 @@ void testApp::setupGUI() {
     gui.addSlider("PersonalSpace", ps.personalSpace, 1, 400);
     gui.addSlider("Force", ps.pForce, 0.1, 10);
     gui.addSlider("Speed", ps.pSpeed, 0.1, 60);
-    gui.addSlider("Mass", ps.particleMass,1,100);
+    gui.addSlider("DotSize", ps.sc,1,100);
     gui.addSlider("maxOrbitForce",ps.maxOrbitForce,0.01,1);
     gui.addSlider("orbitForce",ps.orbitF,0.001,0.9);
 
     gui.addColorPicker("Color", ps.color);
     gui.addSlider("Ribbon Opacity", ps.ribbonOpacity, 0,1);
     gui.addSlider("RibbonWidth", ps.ribbonWidth, 0.1,4).setSmoothing(0.4);
+//    gui.addSlider("RibbonLength", ps.ribbonLength, 0.1,6);
 
+    
     gui.addTitle("Behaviour").setNewColumn(true);
     gui.addToggle("Orbit", ps.orbit);
     gui.addToggle("Avoid Boundaries", ps.avoidBoundaries);
     gui.addToggle("Gravitate", ps.gravitate);
     gui.addToggle("Reset", ps.reset);
-    gui.addToggle("Draw Bounds", ps.drawBounds);
-    gui.addToggle("Draw Bodies", ps.drawBodies);
-    gui.addColorPicker("backgroundColor", ps.bgColor);
     
     gui.addTitle("World").setNewColumn(true);
     gui.addSlider("TimeSpeed",tick,0,1);
@@ -70,18 +71,30 @@ void testApp::setupGUI() {
     gui.addSlider("Drag", ps.dragF, 0.1, 0.99);
     gui.addSlider("bodyMass",ps.bodyMass,1,100);
 
+    gui.addPage("Graphics");
+    gui.addTitle("Drawing");
+    gui.addToggle("Draw Bounds", ps.drawBounds);
+    gui.addToggle("Draw Bodies", ps.drawBodies);
+    gui.addColorPicker("backgroundColor", ps.bgColor);
+
+    gui.addTitle("Camera").setNewColumn(true);
+    gui.addSlider("Camera Position X", camPos.x, -2000, 2000);
+    gui.addSlider("Camera Position Y", camPos.y, -2000, 2000);
+    gui.addSlider("Camera Position Z", camPos.z, -2000, 2000);
+    
+    gui.addTitle("World").setNewColumn(true);
+    gui.addSlider("outerBounds",ps.torusOuterRadius,7,600);
+    gui.addSlider("innerBounds", ps.torusInnerRadius, 5,290);
+    gui.addSlider("innerBoundForce",ps.innerBoundF,0.1,50);
+    gui.addSlider("outerBoundForce",ps.outerBoundF,0.1,50);
+    
     gui.addTitle("Blending").setNewColumn(true);
     gui.addToggle("Blending", ps.blending);
     gui.addToggle("Depth", ps.depth);
+//    string blendArray[] = {"Additive", "Screen", "Multiply", "Alpha", "Subtract"};
+//    gui.addComboBox("BlendMode", ps.blendMode, 5, blendArray);
     string renderArray[] = {"VBO", "Spheres", "Points", "VertexArray", "Gradients!", "Dots and Ribbons", "VBO Billboarding", "debug", "trails", "ribbons"};
     gui.addComboBox("RenderMode", ps.renderMode, 10, renderArray);
-    
-    gui.addPage("Graphics");
-    gui.addTitle("World").setNewColumn(true);
-    gui.addSlider("outerBounds",ps.torusOuterRadius,7,600);
-    gui.addSlider("outerBoundForce",ps.outerBoundF,0.1,50);
-    gui.addSlider("innerBounds", ps.torusInnerRadius, 5,290);
-    gui.addSlider("innerBoundForce",ps.innerBoundF,0.1,50);
 
     gui.addPage("Bright Hearts Gradients");
     gui.addTitle("rings");
